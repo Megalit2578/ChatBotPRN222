@@ -1,8 +1,89 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@{
+    ViewData["Title"] = "Trang chủ";
+    var isAuthed = User?.Identity?.IsAuthenticated == true;
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="home-hero">
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-6">
+                <div class="badge-pill"><i class="bi bi-stars"></i> AI · Powered by Gemini</div>
+                <h1 class="mt-3">Hỏi tài liệu môn học, <span class="grad">nhận câu trả lời có trích dẫn.</span></h1>
+                <p class="lead">ChatBot PRN222 đọc giáo trình, slide, đề ôn của lớp — rồi trả lời câu hỏi của bạn kèm trang & đoạn nguồn gốc, để bạn có thể đối chiếu lại.</p>
+                <div class="cta-row">
+                    @if (isAuthed)
+                    {
+                        <a class="btn btn-brand btn-lg" asp-controller="Chat" asp-action="Index">
+                            <i class="bi bi-chat-dots me-2"></i>Bắt đầu hỏi đáp
+                        </a>
+                        <a class="btn btn-outline-primary btn-lg" asp-controller="Document" asp-action="Index">
+                            <i class="bi bi-folder2-open me-2"></i>Xem tài liệu
+                        </a>
+                    }
+                    else
+                    {
+                        <a class="btn btn-brand btn-lg" asp-controller="Auth" asp-action="Login">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>Đăng nhập
+                        </a>
+                        <a class="btn btn-outline-primary btn-lg" asp-controller="Auth" asp-action="Register">
+                            <i class="bi bi-person-plus me-2"></i>Đăng ký miễn phí
+                        </a>
+                    }
+                </div>
+                <div class="mt-3 small text-muted">
+                    <i class="bi bi-shield-check text-success me-1"></i>
+                    Phân quyền Student / Mentor / Admin — bảo mật theo vai trò.
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="home-illu">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="badge-pill" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.85);">
+                            <i class="bi bi-circle-fill text-success" style="font-size:6px"></i> AI sẵn sàng
+                        </div>
+                        <div style="font-size:.72rem;color:rgba(255,255,255,.55);letter-spacing:.1em;text-transform:uppercase;">PRN222 · Demo</div>
+                    </div>
+                    <div class="mini-chat user">
+                        <div class="who">Bạn</div>
+                        Giải thích middleware trong ASP.NET Core là gì?
+                    </div>
+                    <div class="mini-chat">
+                        <div class="who"><i class="bi bi-stars me-1"></i>AI · Gemini</div>
+                        Middleware là các component xử lý request/response theo pipeline. Mỗi middleware có thể: (1) xử lý request, (2) gọi middleware tiếp theo, (3) xử lý response sau khi middleware sau hoàn tất...
+                        <div style="margin-top:8px;padding-top:8px;border-top:1px dashed rgba(255,255,255,.15);font-size:.72rem;color:rgba(255,255,255,.6);">
+                            <i class="bi bi-link-45deg"></i> Slide_PRN222_Buoi3.pdf · Trang 12
+                        </div>
+                    </div>
+                    <div class="mini-chat user">
+                        <div class="who">Bạn</div>
+                        Cho ví dụ code minh hoạ?
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="home-features">
+            <div class="home-feature">
+                <div class="ico"><i class="bi bi-search"></i></div>
+                <h4>Trả lời có trích dẫn</h4>
+                <p>Mỗi câu trả lời đính kèm trang & đoạn nguồn từ tài liệu gốc — kiểm tra dễ dàng.</p>
+            </div>
+            <div class="home-feature">
+                <div class="ico"><i class="bi bi-folder-symlink-fill"></i></div>
+                <h4>Phạm vi theo môn</h4>
+                <p>Chọn môn học — AI chỉ tìm trong tài liệu môn đó, tránh nhiễu thông tin.</p>
+            </div>
+            <div class="home-feature">
+                <div class="ico"><i class="bi bi-bookmark-star-fill"></i></div>
+                <h4>Lịch sử hội thoại</h4>
+                <p>Lưu tất cả hội thoại theo phiên — quay lại xem ôn tập bất cứ lúc nào.</p>
+            </div>
+            <div class="home-feature">
+                <div class="ico"><i class="bi bi-shield-lock-fill"></i></div>
+                <h4>Phân quyền rõ ràng</h4>
+                <p>Student hỏi đáp · Mentor upload tài liệu · Admin quản trị toàn hệ thống.</p>
+            </div>
+        </div>
+    </div>
 </div>

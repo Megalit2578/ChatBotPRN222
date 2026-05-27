@@ -6,11 +6,14 @@
     var canUpload = isAdmin || isMentor;
 }
 
-<div class="container-fluid py-4" style="max-width:1500px;">
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+<div class="page-shell">
+    <div class="page-head">
         <div>
-            <h3 class="m-0 fw-bold"><i class="bi bi-folder2-open me-2 text-primary"></i>Quản lý tài liệu</h3>
-            <div class="text-muted small">
+            <h1>
+                <span class="ico"><i class="bi bi-folder2-open"></i></span>
+                Quản lý tài liệu
+            </h1>
+            <p class="sub">
                 @if (canUpload)
                 {
                     <span>Upload PDF/DOCX/TXT để bot có thể trả lời từ tài liệu</span>
@@ -19,9 +22,11 @@
                 {
                     <span>Bạn đang xem chế độ chỉ đọc — chỉ Mentor và Admin được upload tài liệu</span>
                 }
-            </div>
+            </p>
         </div>
-        <a class="btn btn-brand" asp-controller="Chat" asp-action="Index"><i class="bi bi-chat-dots me-1"></i>Sang hỏi đáp</a>
+        <a class="btn btn-brand" asp-controller="Chat" asp-action="Index">
+            <i class="bi bi-chat-dots me-1"></i>Sang hỏi đáp
+        </a>
     </div>
 
     <div class="row g-3">
@@ -29,8 +34,8 @@
         {
             <div class="col-lg-4">
                 <div class="card">
-                    <div class="card-header text-white" style="background: var(--gradient-brand); border: none;">
-                        <i class="bi bi-cloud-upload me-1"></i>Upload tài liệu
+                    <div class="card-header grad">
+                        <i class="bi bi-cloud-upload-fill"></i> Upload tài liệu
                     </div>
                     <div class="card-body">
                         <form asp-action="Upload" method="post" enctype="multipart/form-data">
@@ -46,8 +51,12 @@
                             </div>
                             <div class="mb-3">
                                 <label class="form-label small fw-semibold">Tệp tài liệu</label>
-                                <input type="file" name="file" class="form-control" accept=".pdf,.docx,.txt" required />
-                                <div class="form-text">PDF, DOCX, TXT · Tối đa <strong>200 MB</strong>.</div>
+                                <label class="upload-dropzone d-block" for="fileInput">
+                                    <div class="ico"><i class="bi bi-cloud-arrow-up-fill"></i></div>
+                                    <div class="fw-semibold">Kéo thả tệp vào đây hoặc bấm chọn</div>
+                                    <div class="form-text mt-1">PDF, DOCX, TXT · Tối đa <strong>200 MB</strong></div>
+                                    <input id="fileInput" type="file" name="file" class="form-control" accept=".pdf,.docx,.txt" required />
+                                </label>
                             </div>
                             <button class="btn btn-brand w-100"><i class="bi bi-upload me-1"></i>Upload & Index</button>
                         </form>
@@ -57,13 +66,13 @@
                 @if (isAdmin)
                 {
                     <div class="card mt-3">
-                        <div class="card-header"><i class="bi bi-book me-1"></i>Tạo môn học mới</div>
+                        <div class="card-header"><i class="bi bi-book text-primary"></i>Tạo môn học mới</div>
                         <div class="card-body">
                             <form asp-action="CreateSubject" method="post">
                                 <div class="mb-2"><input name="code" class="form-control" placeholder="Mã (vd: PRN222)" required /></div>
                                 <div class="mb-2"><input name="name" class="form-control" placeholder="Tên môn" required /></div>
                                 <div class="mb-2"><textarea name="description" class="form-control" placeholder="Mô tả" rows="2"></textarea></div>
-                                <button class="btn btn-outline-primary w-100">Thêm môn</button>
+                                <button class="btn btn-outline-primary w-100"><i class="bi bi-plus-lg me-1"></i>Thêm môn</button>
                             </form>
                         </div>
                     </div>
@@ -73,14 +82,14 @@
 
         <div class="@(canUpload ? "col-lg-8" : "col-12")">
             <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <span><i class="bi bi-files me-1"></i>Danh sách tài liệu (@Model.Documents.Count)</span>
+                <div class="card-header justify-content-between">
+                    <span><i class="bi bi-files text-primary"></i>Danh sách tài liệu <span class="badge bg-primary-subtle ms-1">@Model.Documents.Count</span></span>
                     <form method="get" class="d-flex gap-2 m-0">
-                        <select name="subjectId" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <select name="subjectId" class="form-select form-select-sm" onchange="this.form.submit()" style="min-width:180px;">
                             <option value="">Tất cả môn</option>
                             @foreach (var s in Model.Subjects)
                             {
-                                <option value="@s.Id" selected="@(Model.SelectedSubjectId == s.Id)">@s.Code</option>
+                                <option value="@s.Id" selected="@(Model.SelectedSubjectId == s.Id)">@s.Code - @s.Name</option>
                             }
                         </select>
                     </form>
@@ -89,8 +98,12 @@
                     @if (Model.Documents.Count == 0)
                     {
                         <div class="text-center p-5 text-muted">
-                            <i class="bi bi-inbox" style="font-size:56px; opacity:.4"></i>
+                            <i class="bi bi-inbox" style="font-size:56px; opacity:.35; color: var(--c-primary);"></i>
                             <p class="mt-3 mb-0">Chưa có tài liệu nào @(string.IsNullOrEmpty(Model.SelectedSubjectId) ? "" : "trong môn học này").</p>
+                            @if (canUpload)
+                            {
+                                <p class="small mt-1">Upload file đầu tiên ở khung bên trái để bắt đầu.</p>
+                            }
                         </div>
                     }
                     else
@@ -103,7 +116,7 @@
                                         <th>Môn</th>
                                         <th class="text-end">Kích thước</th>
                                         <th class="text-end">Chunks</th>
-                                        <th>Upload</th>
+                                        <th>Upload lúc</th>
                                         @if (canUpload)
                                         {
                                             <th></th>
@@ -115,17 +128,20 @@
                                     {
                                         var subject = Model.Subjects.FirstOrDefault(s => s.Id == d.SubjectId);
                                         var ext = System.IO.Path.GetExtension(d.FileName).ToLowerInvariant();
-                                        var icon = ext switch
+                                        var (iconClass, fileType) = ext switch
                                         {
-                                            ".pdf" => "bi-file-earmark-pdf text-danger",
-                                            ".docx" => "bi-file-earmark-word text-primary",
-                                            _ => "bi-file-earmark-text text-secondary"
+                                            ".pdf" => ("pdf", "bi-file-earmark-pdf-fill"),
+                                            ".docx" => ("docx", "bi-file-earmark-word-fill"),
+                                            _ => ("txt", "bi-file-earmark-text-fill")
                                         };
-                                        <tr>
-                                            <td><i class="bi @icon me-2"></i><strong>@d.FileName</strong></td>
-                                            <td><span class="badge bg-light text-dark border">@(subject?.Code ?? "?")</span></td>
+                                        <tr class="doc-row">
+                                            <td>
+                                                <span class="file-icon @iconClass"><i class="bi @fileType"></i></span>
+                                                <strong>@d.FileName</strong>
+                                            </td>
+                                            <td><span class="badge bg-light">@(subject?.Code ?? "?")</span></td>
                                             <td class="text-end small">@($"{d.FileSize / 1024.0 / 1024.0:F2} MB")</td>
-                                            <td class="text-end"><span class="badge bg-primary-subtle text-primary">@d.ChunkCount</span></td>
+                                            <td class="text-end"><span class="badge bg-primary-subtle">@d.ChunkCount</span></td>
                                             <td class="small text-muted">@d.UploadedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
                                             @if (canUpload)
                                             {
@@ -133,7 +149,7 @@
                                                     <form asp-action="Delete" method="post" class="m-0" onsubmit="return confirm('Xoá tài liệu này?');">
                                                         <input type="hidden" name="id" value="@d.Id" />
                                                         <input type="hidden" name="subjectId" value="@Model.SelectedSubjectId" />
-                                                        <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                                        <button class="btn btn-sm btn-outline-danger" title="Xoá"><i class="bi bi-trash"></i></button>
                                                     </form>
                                                 </td>
                                             }
@@ -148,3 +164,12 @@
         </div>
     </div>
 </div>
+
+<style>
+    /* Hide native file input inside dropzone for cleaner look */
+    .upload-dropzone input[type=file] {
+        font-size: .82rem;
+        background: white;
+        border: 1px solid var(--c-border);
+    }
+</style>

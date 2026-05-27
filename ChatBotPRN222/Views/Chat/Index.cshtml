@@ -8,11 +8,11 @@
     <div class="chat-wrapper">
         <aside class="chat-sidebar">
             <button class="btn-new-chat" id="btnNewChat">
-                <i class="bi bi-plus-circle me-1"></i> Cuộc hội thoại mới
+                <i class="bi bi-plus-circle-fill"></i> Cuộc hội thoại mới
             </button>
 
             <h6>Phạm vi tài liệu</h6>
-            <select id="newSubject" class="form-select form-select-sm mb-3">
+            <select id="newSubject" class="form-select form-select-sm mb-2">
                 <option value="">Tất cả môn</option>
                 @foreach (var s in Model.Subjects)
                 {
@@ -20,10 +20,13 @@
                 }
             </select>
 
-            <h6 class="mt-3">Lịch sử hội thoại</h6>
+            <h6>Lịch sử hội thoại</h6>
             @if (Model.Sessions.Count == 0)
             {
-                <div class="small text-white-50 fst-italic">Chưa có cuộc hội thoại nào.</div>
+                <div class="sidebar-empty">
+                    <i class="bi bi-chat-square-dots d-block mb-1" style="font-size:18px"></i>
+                    Chưa có cuộc hội thoại nào
+                </div>
             }
             else
             {
@@ -31,7 +34,8 @@
                 {
                     var cls = (Model.CurrentSession?.Id == session.Id) ? "session-item active" : "session-item";
                     <a class="@cls" asp-action="Index" asp-route-id="@session.Id" title="@session.Title">
-                        <i class="bi bi-chat-left-text me-1"></i>@session.Title
+                        <i class="bi bi-chat-left-text"></i>
+                        <span class="ttl">@session.Title</span>
                     </a>
                 }
             }
@@ -48,7 +52,7 @@
                             <i class="bi bi-book me-1"></i>
                             @(subject is null ? "Tìm trong toàn bộ tài liệu" : $"{subject.Code} – {subject.Name}")
                             <span class="mx-2">·</span>
-                            <i class="bi bi-stars text-primary"></i> Powered by Gemini
+                            <i class="bi bi-stars"></i> Powered by Gemini
                         </div>
                     }
                 </div>
@@ -56,7 +60,7 @@
                 {
                     <form asp-action="Delete" method="post" onsubmit="return confirm('Xoá cuộc hội thoại này?');" class="m-0">
                         <input type="hidden" name="id" value="@Model.CurrentSession.Id" />
-                        <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                        <button class="btn btn-sm btn-outline-danger" title="Xoá hội thoại"><i class="bi bi-trash"></i></button>
                     </form>
                 }
             </div>
@@ -73,10 +77,10 @@
                             <a class="btn btn-outline-primary mt-2" asp-controller="Document" asp-action="Index"><i class="bi bi-cloud-upload me-1"></i>Upload tài liệu</a>
                         }
                         <div class="suggestion-grid">
-                            <div class="suggestion-card" onclick="quickStart('Tóm tắt nội dung chính của tài liệu')"><i class="bi bi-card-text text-primary me-2"></i>Tóm tắt nội dung chính của tài liệu</div>
-                            <div class="suggestion-card" onclick="quickStart('Giải thích khái niệm quan trọng trong bài học')"><i class="bi bi-lightbulb text-warning me-2"></i>Giải thích khái niệm quan trọng</div>
-                            <div class="suggestion-card" onclick="quickStart('Đưa ra ví dụ minh hoạ thực tế')"><i class="bi bi-code-slash text-info me-2"></i>Cho ví dụ minh hoạ</div>
-                            <div class="suggestion-card" onclick="quickStart('Tạo bộ câu hỏi ôn tập')"><i class="bi bi-question-circle text-success me-2"></i>Tạo câu hỏi ôn tập</div>
+                            <div class="suggestion-card" onclick="quickStart('Tóm tắt nội dung chính của tài liệu')"><i class="bi bi-card-text text-primary"></i>Tóm tắt nội dung chính của tài liệu</div>
+                            <div class="suggestion-card" onclick="quickStart('Giải thích khái niệm quan trọng trong bài học')"><i class="bi bi-lightbulb text-warning"></i>Giải thích khái niệm quan trọng</div>
+                            <div class="suggestion-card" onclick="quickStart('Đưa ra ví dụ minh hoạ thực tế')"><i class="bi bi-code-slash text-info"></i>Cho ví dụ minh hoạ</div>
+                            <div class="suggestion-card" onclick="quickStart('Tạo bộ câu hỏi ôn tập')"><i class="bi bi-question-circle text-success"></i>Tạo câu hỏi ôn tập</div>
                         </div>
                     </div>
                 }
@@ -109,7 +113,7 @@
                                 @if (msg.Sources is { Count: > 0 })
                                 {
                                     <div class="sources">
-                                        <strong><i class="bi bi-link-45deg"></i> Nguồn trích dẫn:</strong>
+                                        <strong><i class="bi bi-link-45deg"></i> Nguồn trích dẫn</strong>
                                         @foreach (var src in msg.Sources)
                                         {
                                             <div class="src"><strong>@src.DocumentName</strong> – Trang @src.Page<br /><span class="text-muted">@src.Snippet</span></div>
@@ -127,7 +131,7 @@
                     <input type="hidden" id="sessionId" value="@Model.CurrentSession?.Id" />
                     <div class="chat-input-box">
                         <textarea id="question" rows="1" placeholder="Nhập câu hỏi của bạn... (Enter để gửi, Shift+Enter xuống dòng)" @(Model.CurrentSession is null ? "disabled" : null)></textarea>
-                        <button type="submit" class="btn-send" @(Model.CurrentSession is null ? "disabled" : null)>
+                        <button type="submit" class="btn-send" @(Model.CurrentSession is null ? "disabled" : null) title="Gửi">
                             <i class="bi bi-arrow-up"></i>
                         </button>
                     </div>
@@ -178,7 +182,7 @@ function appendBubble(role, content, sources){
     if (sources && sources.length){
         const sDiv = document.createElement('div');
         sDiv.className = 'sources';
-        sDiv.innerHTML = '<strong><i class="bi bi-link-45deg"></i> Nguồn trích dẫn:</strong>';
+        sDiv.innerHTML = '<strong><i class="bi bi-link-45deg"></i> Nguồn trích dẫn</strong>';
         sources.forEach(s => {
             const item = document.createElement('div');
             item.className = 'src';

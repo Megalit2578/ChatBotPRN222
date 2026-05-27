@@ -5,49 +5,89 @@
 }
 
 <div class="auth-page">
-    <div class="card auth-card">
-        <div class="brand">
-            <i class="bi bi-stars"></i>
-            <h3 class="mt-3 mb-1 fw-bold">ChatBot PRN222</h3>
-            <p class="mb-0 opacity-75 small">Trợ lý học tập AI dựa trên tài liệu môn học</p>
+    <div class="auth-hero">
+        <div class="badge-pill">
+            <i class="bi bi-stars"></i> AI · Tài liệu môn học · PRN222
         </div>
-        <div class="card-body p-4 p-md-5">
-            <h5 class="mb-1 fw-bold">Chào mừng trở lại</h5>
-            <p class="text-muted small mb-4">Đăng nhập để bắt đầu hỏi đáp với AI</p>
+        <h1>Trợ lý học tập <span class="grad">được dẫn dắt bởi tài liệu</span> môn học của bạn.</h1>
+        <p class="lead">Hỏi bất cứ điều gì về slide bài giảng, giáo trình, đề ôn thi — AI sẽ trích dẫn nguồn từ chính tài liệu của lớp.</p>
+
+        <div class="auth-features">
+            <div class="auth-feature">
+                <div class="ico"><i class="bi bi-search"></i></div>
+                <div>
+                    <p class="ttl">Trả lời có trích dẫn</p>
+                    <p class="sub">Mỗi câu trả lời đính kèm trang & đoạn nguồn từ tài liệu gốc.</p>
+                </div>
+            </div>
+            <div class="auth-feature">
+                <div class="ico"><i class="bi bi-folder-symlink"></i></div>
+                <div>
+                    <p class="ttl">Phạm vi theo môn</p>
+                    <p class="sub">Chọn môn học → AI chỉ tìm trong tài liệu môn đó.</p>
+                </div>
+            </div>
+            <div class="auth-feature">
+                <div class="ico"><i class="bi bi-shield-check"></i></div>
+                <div>
+                    <p class="ttl">Phân quyền rõ ràng</p>
+                    <p class="sub">Student hỏi đáp · Mentor upload tài liệu · Admin quản trị.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="auth-panel">
+        <div class="auth-card">
+            <div class="brand-block">
+                <div class="brand-icon"><i class="bi bi-stars"></i></div>
+                <div class="brand-text">ChatBot <span class="accent">PRN222</span></div>
+            </div>
+
+            <h2>Chào mừng trở lại 👋</h2>
+            <p class="sub">Đăng nhập để bắt đầu hỏi đáp với AI</p>
+
             <form asp-action="Login" method="post">
                 <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
                 <div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
 
                 <div class="mb-3">
-                    <label asp-for="Username" class="form-label small fw-semibold"></label>
+                    <label asp-for="Username" class="form-label small"></label>
                     <div class="input-group">
-                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-person"></i></span>
-                        <input asp-for="Username" class="form-control border-start-0" placeholder="Nhập username" autofocus />
+                        <span class="input-group-text"><i class="bi bi-person"></i></span>
+                        <input asp-for="Username" class="form-control" placeholder="Nhập username" autofocus />
                     </div>
                     <span asp-validation-for="Username" class="text-danger small"></span>
                 </div>
+
                 <div class="mb-3">
-                    <label asp-for="Password" class="form-label small fw-semibold"></label>
+                    <label asp-for="Password" class="form-label small"></label>
                     <div class="input-group">
-                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-lock"></i></span>
-                        <input asp-for="Password" class="form-control border-start-0" placeholder="Mật khẩu" />
+                        <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                        <input asp-for="Password" type="password" class="form-control" placeholder="Mật khẩu" />
                     </div>
                     <span asp-validation-for="Password" class="text-danger small"></span>
                 </div>
+
                 <div class="form-check mb-3">
                     <input asp-for="RememberMe" class="form-check-input" />
                     <label asp-for="RememberMe" class="form-check-label small"></label>
                 </div>
-                <button type="submit" class="btn btn-brand w-100"><i class="bi bi-box-arrow-in-right me-1"></i>Đăng nhập</button>
+
+                <button type="submit" class="btn btn-brand w-100">
+                    <i class="bi bi-box-arrow-in-right me-1"></i>Đăng nhập
+                </button>
             </form>
+
             <div class="text-center mt-3 small">
-                Chưa có tài khoản? <a asp-action="Register" class="fw-semibold">Đăng ký</a>
+                Chưa có tài khoản? <a asp-action="Register" class="fw-semibold">Đăng ký ngay →</a>
             </div>
-            <div class="alert alert-light border mt-4 small mb-0">
-                <div class="fw-semibold mb-1"><i class="bi bi-info-circle me-1"></i>Tài khoản demo</div>
-                <div class="d-flex justify-content-between"><span><span class="badge bg-danger">Admin</span></span><code>admin / admin123</code></div>
-                <div class="d-flex justify-content-between"><span><span class="badge bg-warning text-dark">Mentor</span></span><code>mentor / mentor123</code></div>
-                <div class="d-flex justify-content-between"><span><span class="badge bg-info text-dark">Student</span></span><code>student / student123</code></div>
+
+            <div class="demo-accounts">
+                <div class="head"><i class="bi bi-info-circle"></i>Tài khoản demo</div>
+                <div class="row-acc"><span class="badge bg-danger">Admin</span><code>admin / admin123</code></div>
+                <div class="row-acc"><span class="badge bg-warning">Mentor</span><code>mentor / mentor123</code></div>
+                <div class="row-acc"><span class="badge bg-info">Student</span><code>student / student123</code></div>
             </div>
         </div>
     </div>
