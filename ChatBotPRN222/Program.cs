@@ -18,8 +18,8 @@ namespace ChatBotPRN222
             builder.Services.Configure<MongoDbSettings>(builder.Configuration.GetSection("MongoDb"));
             builder.Services.Configure<GeminiSettings>(builder.Configuration.GetSection("Gemini"));
 
-            // === Upload size limits (200MB) ===
-            const long maxUploadBytes = 200L * 1024 * 1024;
+            // === Upload size limits (2GB) ===
+            const long maxUploadBytes = 2048L * 1024 * 1024;
             builder.Services.Configure<FormOptions>(o =>
             {
                 o.MultipartBodyLengthLimit = maxUploadBytes;

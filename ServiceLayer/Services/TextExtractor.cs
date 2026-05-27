@@ -16,6 +16,9 @@ public class TextExtractor : ITextExtractor
         if (ext == ".docx" || contentType.Contains("officedocument.wordprocessingml", StringComparison.OrdinalIgnoreCase))
             return ExtractDocx(stream);
 
+        if (ext == ".pptx" || contentType.Contains("officedocument.presentationml", StringComparison.OrdinalIgnoreCase))
+            return ExtractPptx(stream);
+
         // Plain text fallback
         using var reader = new StreamReader(stream);
         var text = reader.ReadToEnd();
@@ -50,5 +53,38 @@ public class TextExtractor : ITextExtractor
         var paragraphs = body.Descendants<Paragraph>().Select(p => p.InnerText);
         var text = string.Join("\n", paragraphs);
         return new List<(int, string)> { (1, text) };
+    }
+
+    private static List<(int Page, string Text)> ExtractPptx(Stream stream)
+    {
+        using var ms = new MemoryStream();
+        stream.CopyTo(ms);
+        ms.Position = 0;
+        using var ppt = DocumentFormat.OpenXml.Packaging.PresentationDocument.Open(ms, false);
+        var presentationPart = ppt.PresentationPart;
+        if (presentationPart is null) return new List<(int, string)> { (1, string.Empty) };
+
+        if (presentationPart.Presentation?.SlideIdList is null) return new List<(int, string)> { (1, string.Empty) };
+
+        var pages = new List<(int, string)>();
+        int i = 1;
+        foreach (var slideId in presentationPart.Presentation.SlideIdList.Elements<DocumentFormat.OpenXml.Presentation.SlideId>())
+        {
+            var relId = slideId.RelationshipId?.Value;
+            if (string.IsNullOrEmpty(relId)) continue;
+
+            var slidePart = presentationPart.GetPartById(relId) as DocumentFormat.OpenXml.Packaging.SlidePart;
+            if (slidePart?.Slide != null)
+            {
+                var texts = slidePart.Slide.Descendants<DocumentFormat.OpenXml.Drawing.Text>().Select(t => t.Text);
+                pages.Add((i, string.Join("\n", texts)));
+            }
+            else
+            {
+                pages.Add((i, string.Empty));
+            }
+            i++;
+        }
+        return pages.Count > 0 ? pages : new List<(int, string)> { (1, string.Empty) };
     }
 }

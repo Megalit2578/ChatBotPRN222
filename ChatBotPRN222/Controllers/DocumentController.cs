@@ -9,7 +9,7 @@ namespace ChatBotPRN222.Controllers;
 [Authorize]
 public class DocumentController : Controller
 {
-    private const long MaxBytes = 200L * 1024 * 1024; // 200MB
+    private const long MaxBytes = 2048L * 1024 * 1024; // 2GB
     private readonly IDocumentService _docs;
     private readonly ISubjectService _subjects;
 
@@ -54,15 +54,15 @@ public class DocumentController : Controller
         }
         if (file.Length > MaxBytes)
         {
-            TempData["Error"] = "Kích thước tệp vượt quá 200MB.";
+            TempData["Error"] = "Kích thước tệp vượt quá 2GB.";
             return RedirectToAction(nameof(Index), new { subjectId });
         }
 
         var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
-        var allowed = new[] { ".pdf", ".docx", ".txt" };
+        var allowed = new[] { ".pdf", ".docx", ".pptx", ".txt" };
         if (!allowed.Contains(ext))
         {
-            TempData["Error"] = "Chỉ chấp nhận PDF, DOCX hoặc TXT.";
+            TempData["Error"] = "Chỉ chấp nhận PDF, DOCX, PPTX hoặc TXT.";
             return RedirectToAction(nameof(Index), new { subjectId });
         }
 

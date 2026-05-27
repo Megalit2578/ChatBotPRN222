@@ -3,6 +3,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace DataAccessLayer.Entities;
 
+[BsonIgnoreExtraElements]
 public class DocumentChunk
 {
     [BsonId]
