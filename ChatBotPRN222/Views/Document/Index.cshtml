@@ -1,0 +1,150 @@
+@model DocumentIndexViewModel
+@{
+    ViewData["Title"] = "Tài liệu";
+    var isAdmin = User.IsInRole("Admin");
+    var isMentor = User.IsInRole("Mentor");
+    var canUpload = isAdmin || isMentor;
+}
+
+<div class="container-fluid py-4" style="max-width:1500px;">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h3 class="m-0 fw-bold"><i class="bi bi-folder2-open me-2 text-primary"></i>Quản lý tài liệu</h3>
+            <div class="text-muted small">
+                @if (canUpload)
+                {
+                    <span>Upload PDF/DOCX/TXT để bot có thể trả lời từ tài liệu</span>
+                }
+                else
+                {
+                    <span>Bạn đang xem chế độ chỉ đọc — chỉ Mentor và Admin được upload tài liệu</span>
+                }
+            </div>
+        </div>
+        <a class="btn btn-brand" asp-controller="Chat" asp-action="Index"><i class="bi bi-chat-dots me-1"></i>Sang hỏi đáp</a>
+    </div>
+
+    <div class="row g-3">
+        @if (canUpload)
+        {
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header text-white" style="background: var(--gradient-brand); border: none;">
+                        <i class="bi bi-cloud-upload me-1"></i>Upload tài liệu
+                    </div>
+                    <div class="card-body">
+                        <form asp-action="Upload" method="post" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold">Môn học</label>
+                                <select name="subjectId" class="form-select" required>
+                                    <option value="">-- Chọn môn --</option>
+                                    @foreach (var s in Model.Subjects)
+                                    {
+                                        <option value="@s.Id" selected="@(Model.SelectedSubjectId == s.Id)">@s.Code - @s.Name</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold">Tệp tài liệu</label>
+                                <input type="file" name="file" class="form-control" accept=".pdf,.docx,.txt" required />
+                                <div class="form-text">PDF, DOCX, TXT · Tối đa <strong>200 MB</strong>.</div>
+                            </div>
+                            <button class="btn btn-brand w-100"><i class="bi bi-upload me-1"></i>Upload & Index</button>
+                        </form>
+                    </div>
+                </div>
+
+                @if (isAdmin)
+                {
+                    <div class="card mt-3">
+                        <div class="card-header"><i class="bi bi-book me-1"></i>Tạo môn học mới</div>
+                        <div class="card-body">
+                            <form asp-action="CreateSubject" method="post">
+                                <div class="mb-2"><input name="code" class="form-control" placeholder="Mã (vd: PRN222)" required /></div>
+                                <div class="mb-2"><input name="name" class="form-control" placeholder="Tên môn" required /></div>
+                                <div class="mb-2"><textarea name="description" class="form-control" placeholder="Mô tả" rows="2"></textarea></div>
+                                <button class="btn btn-outline-primary w-100">Thêm môn</button>
+                            </form>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+
+        <div class="@(canUpload ? "col-lg-8" : "col-12")">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-files me-1"></i>Danh sách tài liệu (@Model.Documents.Count)</span>
+                    <form method="get" class="d-flex gap-2 m-0">
+                        <select name="subjectId" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <option value="">Tất cả môn</option>
+                            @foreach (var s in Model.Subjects)
+                            {
+                                <option value="@s.Id" selected="@(Model.SelectedSubjectId == s.Id)">@s.Code</option>
+                            }
+                        </select>
+                    </form>
+                </div>
+                <div class="card-body p-0">
+                    @if (Model.Documents.Count == 0)
+                    {
+                        <div class="text-center p-5 text-muted">
+                            <i class="bi bi-inbox" style="font-size:56px; opacity:.4"></i>
+                            <p class="mt-3 mb-0">Chưa có tài liệu nào @(string.IsNullOrEmpty(Model.SelectedSubjectId) ? "" : "trong môn học này").</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Tài liệu</th>
+                                        <th>Môn</th>
+                                        <th class="text-end">Kích thước</th>
+                                        <th class="text-end">Chunks</th>
+                                        <th>Upload</th>
+                                        @if (canUpload)
+                                        {
+                                            <th></th>
+                                        }
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var d in Model.Documents)
+                                    {
+                                        var subject = Model.Subjects.FirstOrDefault(s => s.Id == d.SubjectId);
+                                        var ext = System.IO.Path.GetExtension(d.FileName).ToLowerInvariant();
+                                        var icon = ext switch
+                                        {
+                                            ".pdf" => "bi-file-earmark-pdf text-danger",
+                                            ".docx" => "bi-file-earmark-word text-primary",
+                                            _ => "bi-file-earmark-text text-secondary"
+                                        };
+                                        <tr>
+                                            <td><i class="bi @icon me-2"></i><strong>@d.FileName</strong></td>
+                                            <td><span class="badge bg-light text-dark border">@(subject?.Code ?? "?")</span></td>
+                                            <td class="text-end small">@($"{d.FileSize / 1024.0 / 1024.0:F2} MB")</td>
+                                            <td class="text-end"><span class="badge bg-primary-subtle text-primary">@d.ChunkCount</span></td>
+                                            <td class="small text-muted">@d.UploadedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                                            @if (canUpload)
+                                            {
+                                                <td class="text-end">
+                                                    <form asp-action="Delete" method="post" class="m-0" onsubmit="return confirm('Xoá tài liệu này?');">
+                                                        <input type="hidden" name="id" value="@d.Id" />
+                                                        <input type="hidden" name="subjectId" value="@Model.SelectedSubjectId" />
+                                                        <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                                    </form>
+                                                </td>
+                                            }
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

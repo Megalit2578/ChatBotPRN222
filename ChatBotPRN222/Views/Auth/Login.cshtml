@@ -1,0 +1,58 @@
+@model LoginViewModel
+@{
+    ViewData["Title"] = "Đăng nhập";
+    Layout = "_Layout";
+}
+
+<div class="auth-page">
+    <div class="card auth-card">
+        <div class="brand">
+            <i class="bi bi-stars"></i>
+            <h3 class="mt-3 mb-1 fw-bold">ChatBot PRN222</h3>
+            <p class="mb-0 opacity-75 small">Trợ lý học tập AI dựa trên tài liệu môn học</p>
+        </div>
+        <div class="card-body p-4 p-md-5">
+            <h5 class="mb-1 fw-bold">Chào mừng trở lại</h5>
+            <p class="text-muted small mb-4">Đăng nhập để bắt đầu hỏi đáp với AI</p>
+            <form asp-action="Login" method="post">
+                <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+                <div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+
+                <div class="mb-3">
+                    <label asp-for="Username" class="form-label small fw-semibold"></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-person"></i></span>
+                        <input asp-for="Username" class="form-control border-start-0" placeholder="Nhập username" autofocus />
+                    </div>
+                    <span asp-validation-for="Username" class="text-danger small"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Password" class="form-label small fw-semibold"></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-lock"></i></span>
+                        <input asp-for="Password" class="form-control border-start-0" placeholder="Mật khẩu" />
+                    </div>
+                    <span asp-validation-for="Password" class="text-danger small"></span>
+                </div>
+                <div class="form-check mb-3">
+                    <input asp-for="RememberMe" class="form-check-input" />
+                    <label asp-for="RememberMe" class="form-check-label small"></label>
+                </div>
+                <button type="submit" class="btn btn-brand w-100"><i class="bi bi-box-arrow-in-right me-1"></i>Đăng nhập</button>
+            </form>
+            <div class="text-center mt-3 small">
+                Chưa có tài khoản? <a asp-action="Register" class="fw-semibold">Đăng ký</a>
+            </div>
+            <div class="alert alert-light border mt-4 small mb-0">
+                <div class="fw-semibold mb-1"><i class="bi bi-info-circle me-1"></i>Tài khoản demo</div>
+                <div class="d-flex justify-content-between"><span><span class="badge bg-danger">Admin</span></span><code>admin / admin123</code></div>
+                <div class="d-flex justify-content-between"><span><span class="badge bg-warning text-dark">Mentor</span></span><code>mentor / mentor123</code></div>
+                <div class="d-flex justify-content-between"><span><span class="badge bg-info text-dark">Student</span></span><code>student / student123</code></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

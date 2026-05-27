@@ -1,0 +1,309 @@
+@model ChatIndexViewModel
+@{
+    ViewData["Title"] = "Hỏi đáp AI";
+    var canUpload = User.IsInRole("Admin") || User.IsInRole("Mentor");
+}
+
+<div class="container-fluid px-4" style="max-width:1500px;">
+    <div class="chat-wrapper">
+        <aside class="chat-sidebar">
+            <button class="btn-new-chat" id="btnNewChat">
+                <i class="bi bi-plus-circle me-1"></i> Cuộc hội thoại mới
+            </button>
+
+            <h6>Phạm vi tài liệu</h6>
+            <select id="newSubject" class="form-select form-select-sm mb-3">
+                <option value="">Tất cả môn</option>
+                @foreach (var s in Model.Subjects)
+                {
+                    <option value="@s.Id">@s.Code - @s.Name</option>
+                }
+            </select>
+
+            <h6 class="mt-3">Lịch sử hội thoại</h6>
+            @if (Model.Sessions.Count == 0)
+            {
+                <div class="small text-white-50 fst-italic">Chưa có cuộc hội thoại nào.</div>
+            }
+            else
+            {
+                foreach (var session in Model.Sessions)
+                {
+                    var cls = (Model.CurrentSession?.Id == session.Id) ? "session-item active" : "session-item";
+                    <a class="@cls" asp-action="Index" asp-route-id="@session.Id" title="@session.Title">
+                        <i class="bi bi-chat-left-text me-1"></i>@session.Title
+                    </a>
+                }
+            }
+        </aside>
+
+        <section class="chat-main">
+            <div class="chat-header d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="fw-bold">@(Model.CurrentSession?.Title ?? "Chọn hoặc tạo cuộc hội thoại mới")</div>
+                    @if (Model.CurrentSession is not null)
+                    {
+                        var subject = Model.Subjects.FirstOrDefault(s => s.Id == Model.CurrentSession.SubjectId);
+                        <div class="small text-muted">
+                            <i class="bi bi-book me-1"></i>
+                            @(subject is null ? "Tìm trong toàn bộ tài liệu" : $"{subject.Code} – {subject.Name}")
+                            <span class="mx-2">·</span>
+                            <i class="bi bi-stars text-primary"></i> Powered by Gemini
+                        </div>
+                    }
+                </div>
+                @if (Model.CurrentSession is not null)
+                {
+                    <form asp-action="Delete" method="post" onsubmit="return confirm('Xoá cuộc hội thoại này?');" class="m-0">
+                        <input type="hidden" name="id" value="@Model.CurrentSession.Id" />
+                        <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                    </form>
+                }
+            </div>
+
+            <div class="chat-messages" id="messages">
+                @if (Model.CurrentSession is null)
+                {
+                    <div class="empty-state">
+                        <div class="emoji"><i class="bi bi-stars"></i></div>
+                        <h4 class="fw-bold">Xin chào! Bạn muốn hỏi gì hôm nay?</h4>
+                        <p>Chọn môn học bên trái, tạo cuộc hội thoại mới, và bắt đầu đặt câu hỏi về tài liệu của bạn.</p>
+                        @if (canUpload)
+                        {
+                            <a class="btn btn-outline-primary mt-2" asp-controller="Document" asp-action="Index"><i class="bi bi-cloud-upload me-1"></i>Upload tài liệu</a>
+                        }
+                        <div class="suggestion-grid">
+                            <div class="suggestion-card" onclick="quickStart('Tóm tắt nội dung chính của tài liệu')"><i class="bi bi-card-text text-primary me-2"></i>Tóm tắt nội dung chính của tài liệu</div>
+                            <div class="suggestion-card" onclick="quickStart('Giải thích khái niệm quan trọng trong bài học')"><i class="bi bi-lightbulb text-warning me-2"></i>Giải thích khái niệm quan trọng</div>
+                            <div class="suggestion-card" onclick="quickStart('Đưa ra ví dụ minh hoạ thực tế')"><i class="bi bi-code-slash text-info me-2"></i>Cho ví dụ minh hoạ</div>
+                            <div class="suggestion-card" onclick="quickStart('Tạo bộ câu hỏi ôn tập')"><i class="bi bi-question-circle text-success me-2"></i>Tạo câu hỏi ôn tập</div>
+                        </div>
+                    </div>
+                }
+                else if (Model.Messages.Count == 0)
+                {
+                    <div class="empty-state">
+                        <div class="emoji"><i class="bi bi-chat-square-quote"></i></div>
+                        <h5 class="fw-bold">Hãy đặt câu hỏi đầu tiên</h5>
+                        <p>AI sẽ tìm trong tài liệu môn học và trả lời kèm trích dẫn nguồn.</p>
+                    </div>
+                }
+                else
+                {
+                    foreach (var msg in Model.Messages)
+                    {
+                        var isUser = msg.Role == "user";
+                        <div class="chat-bubble @(isUser ? "user" : "assistant")">
+                            <div class="bubble-avatar">
+                                @(isUser ? "U" : "AI")
+                            </div>
+                            <div class="bubble-body">
+                                @if (isUser)
+                                {
+                                    @msg.Content
+                                }
+                                else
+                                {
+                                    <div class="md-content" data-md="@msg.Content"></div>
+                                }
+                                @if (msg.Sources is { Count: > 0 })
+                                {
+                                    <div class="sources">
+                                        <strong><i class="bi bi-link-45deg"></i> Nguồn trích dẫn:</strong>
+                                        @foreach (var src in msg.Sources)
+                                        {
+                                            <div class="src"><strong>@src.DocumentName</strong> – Trang @src.Page<br /><span class="text-muted">@src.Snippet</span></div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+
+            <div class="chat-input">
+                <form id="chatForm" autocomplete="off">
+                    <input type="hidden" id="sessionId" value="@Model.CurrentSession?.Id" />
+                    <div class="chat-input-box">
+                        <textarea id="question" rows="1" placeholder="Nhập câu hỏi của bạn... (Enter để gửi, Shift+Enter xuống dòng)" @(Model.CurrentSession is null ? "disabled" : null)></textarea>
+                        <button type="submit" class="btn-send" @(Model.CurrentSession is null ? "disabled" : null)>
+                            <i class="bi bi-arrow-up"></i>
+                        </button>
+                    </div>
+                    <div class="small text-muted mt-2 text-center">
+                        <i class="bi bi-shield-check me-1"></i>AI có thể sai — hãy kiểm tra lại với tài liệu gốc.
+                    </div>
+                </form>
+            </div>
+        </section>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+const messagesEl = document.getElementById('messages');
+
+function scrollToBottom() { messagesEl.scrollTop = messagesEl.scrollHeight; }
+function renderMarkdown(text){
+    try { return DOMPurify.sanitize(marked.parse(text || '')); }
+    catch(e){ return DOMPurify.sanitize(text || ''); }
+}
+
+// Render existing assistant messages from data-md
+document.querySelectorAll('.md-content').forEach(el => {
+    el.innerHTML = renderMarkdown(el.getAttribute('data-md') || el.textContent);
+});
+
+function appendBubble(role, content, sources){
+    const isUser = role === 'user';
+    const wrap = document.createElement('div');
+    wrap.className = 'chat-bubble ' + (isUser ? 'user' : 'assistant');
+
+    const avatar = document.createElement('div');
+    avatar.className = 'bubble-avatar';
+    avatar.textContent = isUser ? 'U' : 'AI';
+
+    const body = document.createElement('div');
+    body.className = 'bubble-body';
+    if (isUser) {
+        body.textContent = content;
+    } else {
+        const md = document.createElement('div');
+        md.className = 'md-content';
+        md.innerHTML = renderMarkdown(content);
+        body.appendChild(md);
+    }
+
+    if (sources && sources.length){
+        const sDiv = document.createElement('div');
+        sDiv.className = 'sources';
+        sDiv.innerHTML = '<strong><i class="bi bi-link-45deg"></i> Nguồn trích dẫn:</strong>';
+        sources.forEach(s => {
+            const item = document.createElement('div');
+            item.className = 'src';
+            const name = document.createElement('strong');
+            name.textContent = s.documentName;
+            item.appendChild(name);
+            item.appendChild(document.createTextNode(' – Trang ' + s.page));
+            item.appendChild(document.createElement('br'));
+            const snip = document.createElement('span');
+            snip.className = 'text-muted';
+            snip.textContent = s.snippet;
+            item.appendChild(snip);
+            sDiv.appendChild(item);
+        });
+        body.appendChild(sDiv);
+    }
+
+    wrap.appendChild(avatar);
+    wrap.appendChild(body);
+    messagesEl.appendChild(wrap);
+    scrollToBottom();
+    return wrap;
+}
+
+function appendTyping(){
+    const wrap = document.createElement('div');
+    wrap.className = 'chat-bubble assistant';
+    wrap.innerHTML = '<div class="bubble-avatar">AI</div><div class="bubble-body"><div class="typing"><span></span><span></span><span></span></div></div>';
+    messagesEl.appendChild(wrap);
+    scrollToBottom();
+    return wrap;
+}
+
+async function createSession(subjectId){
+    const res = await fetch('@Url.Action("NewSession","Chat")', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subjectId })
+    });
+    if (res.ok){
+        const data = await res.json();
+        return data.id;
+    }
+    throw new Error('Không tạo được session');
+}
+
+document.getElementById('btnNewChat').addEventListener('click', async () => {
+    try {
+        const subjectId = document.getElementById('newSubject').value || null;
+        const id = await createSession(subjectId);
+        window.location.href = '/Chat/Index/' + id;
+    } catch (err) { alert(err.message); }
+});
+
+async function quickStart(question){
+    try {
+        const subjectId = document.getElementById('newSubject').value || null;
+        const id = await createSession(subjectId);
+        window.location.href = '/Chat/Index/' + id + '?q=' + encodeURIComponent(question);
+    } catch (err) { alert(err.message); }
+}
+window.quickStart = quickStart;
+
+const chatForm = document.getElementById('chatForm');
+const qInput = document.getElementById('question');
+
+async function sendQuestion(text){
+    const sessionId = document.getElementById('sessionId').value;
+    if (!sessionId || !text) return;
+
+    const emptyState = messagesEl.querySelector('.empty-state');
+    if (emptyState) emptyState.remove();
+
+    appendBubble('user', text, null);
+    qInput.value = '';
+    qInput.style.height = 'auto';
+
+    const typing = appendTyping();
+    try {
+        const res = await fetch('@Url.Action("Ask","Chat")', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sessionId, question: text })
+        });
+        typing.remove();
+        if (res.ok){
+            const data = await res.json();
+            appendBubble('assistant', data.answer, data.sources);
+        } else {
+            appendBubble('assistant', '*(Lỗi)* Không nhận được phản hồi từ máy chủ.', null);
+        }
+    } catch (err){
+        typing.remove();
+        appendBubble('assistant', '*(Lỗi mạng)* ' + err.message, null);
+    }
+}
+
+chatForm?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const text = qInput.value.trim();
+    if (text) sendQuestion(text);
+});
+
+qInput?.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey){
+        e.preventDefault();
+        chatForm.requestSubmit();
+    }
+});
+
+qInput?.addEventListener('input', function(){
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 160) + 'px';
+});
+
+// Auto-send from URL ?q=
+(function(){
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get('q');
+    if (q && document.getElementById('sessionId').value){
+        history.replaceState(null, '', window.location.pathname);
+        sendQuestion(q);
+    }
+})();
+
+scrollToBottom();
+</script>
+}

@@ -1,0 +1,176 @@
+@model UserIndexViewModel
+@{
+    ViewData["Title"] = "Quản lý người dùng";
+    var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+}
+
+<div class="container-fluid py-4" style="max-width:1400px;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="m-0 fw-bold"><i class="bi bi-people-fill me-2 text-primary"></i>Quản lý người dùng</h3>
+            <div class="text-muted small">Phân quyền & quản lý tài khoản hệ thống</div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="stat-card stat-primary">
+                <i class="bi bi-people"></i>
+                <div class="stat-value">@Model.Total</div>
+                <div class="stat-label">Tổng người dùng</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card stat-danger">
+                <i class="bi bi-shield-lock"></i>
+                <div class="stat-value">@Model.Admins</div>
+                <div class="stat-label">Admin</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card stat-warning">
+                <i class="bi bi-mortarboard"></i>
+                <div class="stat-value">@Model.Mentors</div>
+                <div class="stat-label">Mentor</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card stat-info">
+                <i class="bi bi-person-badge"></i>
+                <div class="stat-value">@Model.Students</div>
+                <div class="stat-label">Student</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-header text-white" style="background: linear-gradient(135deg,#1e3a8a,#2563eb);">
+                    <i class="bi bi-person-plus me-1"></i> Tạo người dùng mới
+                </div>
+                <div class="card-body">
+                    <form asp-action="Create" method="post">
+                        <div class="mb-2">
+                            <label class="form-label small">Username</label>
+                            <input name="username" class="form-control" required />
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small">Email</label>
+                            <input name="email" type="email" class="form-control" />
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small">Họ tên</label>
+                            <input name="fullName" class="form-control" />
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small">Mật khẩu</label>
+                            <input name="password" type="password" class="form-control" required minlength="6" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small">Role</label>
+                            <select name="role" class="form-select" required>
+                                <option value="Student">Student</option>
+                                <option value="Mentor">Mentor</option>
+                                <option value="Admin">Admin</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary w-100"><i class="bi bi-plus-lg me-1"></i>Tạo</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white">
+                    <i class="bi bi-list-ul me-1"></i> Danh sách người dùng
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Họ tên</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Tạo lúc</th>
+                                    <th class="text-end">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var u in Model.Users)
+                                {
+                                    var isSelf = u.Id == currentUserId;
+                                    var badgeClass = u.Role switch
+                                    {
+                                        "Admin" => "bg-danger",
+                                        "Mentor" => "bg-warning text-dark",
+                                        _ => "bg-info text-dark"
+                                    };
+                                    <tr>
+                                        <td><strong>@u.Username</strong>@(isSelf ? " (bạn)" : "")</td>
+                                        <td>@u.FullName</td>
+                                        <td class="small text-muted">@u.Email</td>
+                                        <td><span class="badge @badgeClass">@u.Role</span></td>
+                                        <td class="small">@u.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")</td>
+                                        <td class="text-end">
+                                            <div class="btn-group btn-group-sm">
+                                                <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#roleModal-@u.Id"><i class="bi bi-shield"></i></button>
+                                                <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#pwdModal-@u.Id"><i class="bi bi-key"></i></button>
+                                                @if (!isSelf)
+                                                {
+                                                    <form asp-action="Delete" method="post" onsubmit="return confirm('Xoá tài khoản @u.Username?');" class="m-0">
+                                                        <input type="hidden" name="id" value="@u.Id" />
+                                                        <button class="btn btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                                    </form>
+                                                }
+                                            </div>
+
+                                            <div class="modal fade" id="roleModal-@u.Id" tabindex="-1">
+                                                <div class="modal-dialog">
+                                                    <form class="modal-content" asp-action="UpdateRole" method="post">
+                                                        <input type="hidden" name="id" value="@u.Id" />
+                                                        <div class="modal-header"><h5 class="modal-title">Đổi quyền — @u.Username</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+                                                        <div class="modal-body">
+                                                            <select name="role" class="form-select">
+                                                                <option value="Student" selected="@(u.Role=="Student")">Student</option>
+                                                                <option value="Mentor" selected="@(u.Role=="Mentor")">Mentor</option>
+                                                                <option value="Admin" selected="@(u.Role=="Admin")">Admin</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Huỷ</button>
+                                                            <button class="btn btn-primary">Lưu</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+
+                                            <div class="modal fade" id="pwdModal-@u.Id" tabindex="-1">
+                                                <div class="modal-dialog">
+                                                    <form class="modal-content" asp-action="ResetPassword" method="post">
+                                                        <input type="hidden" name="id" value="@u.Id" />
+                                                        <div class="modal-header"><h5 class="modal-title">Reset mật khẩu — @u.Username</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+                                                        <div class="modal-body">
+                                                            <input name="newPassword" type="password" minlength="6" placeholder="Mật khẩu mới (tối thiểu 6 ký tự)" class="form-control" required />
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Huỷ</button>
+                                                            <button class="btn btn-primary">Lưu</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
