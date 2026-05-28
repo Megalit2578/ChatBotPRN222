@@ -33,8 +33,8 @@
         <div class="col-md-3 col-6">
             <div class="stat-card stat-warning">
                 <i class="bi bi-mortarboard"></i>
-                <div class="stat-value">@Model.Mentors</div>
-                <div class="stat-label">Mentor</div>
+                <div class="stat-value">@Model.Lecturers</div>
+                <div class="stat-label">Lecturer</div>
             </div>
         </div>
         <div class="col-md-3 col-6">
@@ -74,7 +74,7 @@
                             <label class="form-label small fw-semibold">Role</label>
                             <select name="role" class="form-select" required>
                                 <option value="Student">Student</option>
-                                <option value="Mentor">Mentor</option>
+                                <option value="Lecturer">Lecturer</option>
                                 <option value="Admin">Admin</option>
                             </select>
                         </div>
@@ -107,7 +107,7 @@
                                     var badgeClass = u.Role switch
                                     {
                                         "Admin" => "bg-danger",
-                                        "Mentor" => "bg-warning",
+                                        "Lecturer" => "bg-warning",
                                         _ => "bg-info"
                                     };
                                     var initial = !string.IsNullOrEmpty(u.FullName) ? u.FullName.Substring(0, 1).ToUpper() : u.Username.Substring(0, 1).ToUpper();
@@ -145,7 +145,7 @@
                                                         <div class="modal-body">
                                                             <select name="role" class="form-select">
                                                                 <option value="Student" selected="@(u.Role=="Student")">Student</option>
-                                                                <option value="Mentor" selected="@(u.Role=="Mentor")">Mentor</option>
+                                                                <option value="Lecturer" selected="@(u.Role=="Lecturer")">Lecturer</option>
                                                                 <option value="Admin" selected="@(u.Role=="Admin")">Admin</option>
                                                             </select>
                                                         </div>

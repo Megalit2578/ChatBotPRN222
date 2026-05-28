@@ -1,7 +1,7 @@
 @model ChatIndexViewModel
 @{
     ViewData["Title"] = "Hỏi đáp AI";
-    var canUpload = User.IsInRole("Admin") || User.IsInRole("Mentor");
+    var canUpload = User.IsInRole("Admin") || User.IsInRole("Lecturer");
 }
 
 <div class="container-fluid px-4" style="max-width:1500px;">

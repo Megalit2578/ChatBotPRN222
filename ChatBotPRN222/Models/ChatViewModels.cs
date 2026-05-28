@@ -33,6 +33,6 @@ public class UserIndexViewModel
     public List<User> Users { get; set; } = new();
     public long Total { get; set; }
     public long Admins { get; set; }
-    public long Mentors { get; set; }
+    public long Lecturers { get; set; }
     public long Students { get; set; }
 }

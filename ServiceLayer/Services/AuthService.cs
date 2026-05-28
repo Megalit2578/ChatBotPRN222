@@ -62,16 +62,16 @@ public class AuthService : IAuthService
             });
         }
 
-        var mentor = await _userRepo.GetByUsernameAsync("mentor");
-        if (mentor is null)
+        var lecturer = await _userRepo.GetByUsernameAsync("lecturer");
+        if (lecturer is null)
         {
             await _userRepo.CreateAsync(new User
             {
-                Username = "mentor",
-                Email = "mentor@chatbot.local",
+                Username = "lecturer",
+                Email = "lecturer@chatbot.local",
                 FullName = "Giảng viên Demo",
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword("mentor123"),
-                Role = "Mentor"
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("lecturer123"),
+                Role = "Lecturer"
             });
         }
 

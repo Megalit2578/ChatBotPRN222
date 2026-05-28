@@ -37,7 +37,7 @@ public class DocumentController : Controller
     }
 
     [HttpPost]
-    [Authorize(Policy = "MentorOrAdmin")]
+    [Authorize(Policy = "LecturerOrAdmin")]
     [RequestSizeLimit(MaxBytes)]
     [RequestFormLimits(MultipartBodyLengthLimit = MaxBytes)]
     public async Task<IActionResult> Upload(IFormFile file, string subjectId)
@@ -81,7 +81,7 @@ public class DocumentController : Controller
     }
 
     [HttpPost]
-    [Authorize(Policy = "MentorOrAdmin")]
+    [Authorize(Policy = "LecturerOrAdmin")]
     public async Task<IActionResult> Delete(string id, string? subjectId)
     {
         await _docs.DeleteAsync(id);

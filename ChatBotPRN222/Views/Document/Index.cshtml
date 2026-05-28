@@ -2,8 +2,8 @@
 @{
     ViewData["Title"] = "Tài liệu";
     var isAdmin = User.IsInRole("Admin");
-    var isMentor = User.IsInRole("Mentor");
-    var canUpload = isAdmin || isMentor;
+    var isLecturer = User.IsInRole("Lecturer");
+    var canUpload = isAdmin || isLecturer;
 }
 
 <div class="page-shell">
@@ -20,7 +20,7 @@
                 }
                 else
                 {
-                    <span>Bạn đang xem chế độ chỉ đọc — chỉ Mentor và Admin được upload tài liệu</span>
+                    <span>Bạn đang xem chế độ chỉ đọc — chỉ Lecturer và Admin được upload tài liệu</span>
                 }
             </p>
         </div>

@@ -71,7 +71,7 @@ namespace ChatBotPRN222
 
             builder.Services.AddAuthorization(options =>
             {
-                options.AddPolicy("MentorOrAdmin", p => p.RequireRole("Mentor", "Admin"));
+                options.AddPolicy("LecturerOrAdmin", p => p.RequireRole("Lecturer", "Admin"));
                 options.AddPolicy("AdminOnly", p => p.RequireRole("Admin"));
             });
 

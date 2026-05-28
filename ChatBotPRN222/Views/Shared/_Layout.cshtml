@@ -3,13 +3,13 @@
     var fullName = User?.FindFirst("FullName")?.Value ?? User?.Identity?.Name;
     var role = User?.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
     var isAdmin = User?.IsInRole("Admin") == true;
-    var isMentor = User?.IsInRole("Mentor") == true;
-    var canManageDocs = isAdmin || isMentor;
+    var isLecturer = User?.IsInRole("Lecturer") == true;
+    var canManageDocs = isAdmin || isLecturer;
     var currentController = (ViewContext.RouteData.Values["controller"] as string) ?? "";
     var roleBadge = role switch
     {
         "Admin" => "bg-danger",
-        "Mentor" => "bg-warning text-dark",
+        "Lecturer" => "bg-warning text-dark",
         _ => "bg-info text-dark"
     };
 }

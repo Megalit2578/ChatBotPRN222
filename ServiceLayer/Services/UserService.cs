@@ -69,8 +69,8 @@ public class UserService : IUserService
     {
         var total = await _repo.CountAsync();
         var admins = await _repo.CountByRoleAsync(Roles.Admin);
-        var mentors = await _repo.CountByRoleAsync(Roles.Mentor);
+        var lecturers = await _repo.CountByRoleAsync(Roles.Lecturer);
         var students = await _repo.CountByRoleAsync(Roles.Student);
-        return (total, admins, mentors, students);
+        return (total, admins, lecturers, students);
     }
 }

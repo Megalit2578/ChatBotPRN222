@@ -56,11 +56,11 @@ Sau khi ứng dụng khởi chạy thành công lần đầu tiên, hệ thống
 | Vai trò (Role) | Tên đăng nhập (Username) | Mật khẩu (Password) | Chức năng chính |
 | :--- | :--- | :--- | :--- |
 | **Quản trị viên (Admin)** | `admin` | `admin123` | Quản lý người dùng, cấu hình hệ thống |
-| **Giảng viên (Mentor)** | `mentor` | `mentor123` | Tải lên slide tài liệu (.pptx), tạo phòng chat |
+| **Giảng viên (Lecturer)** | `lecturer` | `lecturer123` | Tải lên slide tài liệu (.pptx), tạo phòng chat |
 | **Sinh viên (Student)** | `student` | `student123` | Vào phòng chat, hỏi đáp chatbot dựa trên tài liệu |
 
 ---
 
 💡 **Mẹo sử dụng:** 
-1. Đăng nhập tài khoản **`mentor`** để tải tài liệu bài giảng PowerPoint lên môn học.
+1. Đăng nhập tài khoản **`lecturer`** để tải tài liệu bài giảng PowerPoint lên môn học.
 2. Đăng nhập tài khoản **`student`** để bắt đầu chat và đặt câu hỏi cho Bot dựa trên chính tài liệu vừa được giảng viên tải lên.

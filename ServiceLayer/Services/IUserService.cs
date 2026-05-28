@@ -10,5 +10,5 @@ public interface IUserService
     Task<(bool Success, string? Error)> UpdateRoleAsync(string id, string newRole);
     Task<(bool Success, string? Error)> ResetPasswordAsync(string id, string newPassword);
     Task<(bool Success, string? Error)> DeleteAsync(string id);
-    Task<(long Total, long Admins, long Mentors, long Students)> GetCountsAsync();
+    Task<(long Total, long Admins, long Lecturers, long Students)> GetCountsAsync();
 }

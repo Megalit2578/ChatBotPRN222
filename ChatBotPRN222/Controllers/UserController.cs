@@ -14,13 +14,13 @@ public class UserController : Controller
     public async Task<IActionResult> Index()
     {
         var users = await _users.GetAllAsync();
-        var (total, admins, mentors, students) = await _users.GetCountsAsync();
+        var (total, admins, lecturers, students) = await _users.GetCountsAsync();
         return View(new UserIndexViewModel
         {
             Users = users,
             Total = total,
             Admins = admins,
-            Mentors = mentors,
+            Lecturers = lecturers,
             Students = students
         });
     }
