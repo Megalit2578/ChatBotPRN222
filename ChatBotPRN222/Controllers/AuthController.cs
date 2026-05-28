@@ -39,6 +39,7 @@ public class AuthController : Controller
             new Claim(ClaimTypes.Name, result.Username!),
             new Claim("FullName", result.FullName ?? string.Empty),
             new Claim(ClaimTypes.Role, result.Role ?? "Student"),
+            new Claim("AvatarPath", result.AvatarPath ?? string.Empty),
         };
 
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);

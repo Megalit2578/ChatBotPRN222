@@ -26,4 +26,10 @@ public class User
 
     [BsonElement("createdAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    [BsonElement("avatarPath")]
+    public string? AvatarPath { get; set; }
+
+    [BsonElement("bio")]
+    public string? Bio { get; set; }
 }

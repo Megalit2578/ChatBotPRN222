@@ -65,6 +65,39 @@ public class UserService : IUserService
         return (true, null);
     }
 
+    public async Task<(bool, string?)> UpdateProfileAsync(string id, string fullName, string email, string? bio)
+    {
+        var user = await _repo.GetByIdAsync(id);
+        if (user is null) return (false, "User không tồn tại");
+        user.FullName = fullName.Trim();
+        user.Email = email?.Trim() ?? string.Empty;
+        user.Bio = bio?.Trim();
+        await _repo.UpdateAsync(user);
+        return (true, null);
+    }
+
+    public async Task<(bool, string?)> UpdateAvatarAsync(string id, string avatarPath)
+    {
+        var user = await _repo.GetByIdAsync(id);
+        if (user is null) return (false, "User không tồn tại");
+        user.AvatarPath = avatarPath;
+        await _repo.UpdateAsync(user);
+        return (true, null);
+    }
+
+    public async Task<(bool, string?)> ChangePasswordAsync(string id, string currentPassword, string newPassword)
+    {
+        var user = await _repo.GetByIdAsync(id);
+        if (user is null) return (false, "User không tồn tại");
+        if (!BCrypt.Net.BCrypt.Verify(currentPassword, user.PasswordHash))
+            return (false, "Mật khẩu hiện tại không đúng");
+        if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 6)
+            return (false, "Mật khẩu mới phải ít nhất 6 ký tự");
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+        await _repo.UpdateAsync(user);
+        return (true, null);
+    }
+
     public async Task<(long, long, long, long)> GetCountsAsync()
     {
         var total = await _repo.CountAsync();

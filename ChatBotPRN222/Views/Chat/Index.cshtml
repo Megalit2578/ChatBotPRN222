@@ -2,6 +2,9 @@
 @{
     ViewData["Title"] = "Hỏi đáp AI";
     var canUpload = User.IsInRole("Admin") || User.IsInRole("Lecturer");
+    var userFullName = User?.FindFirst("FullName")?.Value ?? User?.Identity?.Name ?? "U";
+    var userAvatarPath = User?.FindFirst("AvatarPath")?.Value;
+    var userInitial = (!string.IsNullOrWhiteSpace(userFullName) ? userFullName : "U").Substring(0, 1).ToUpper();
 }
 
 <div class="container-fluid px-4" style="max-width:1500px;">
@@ -98,9 +101,14 @@
                     {
                         var isUser = msg.Role == "user";
                         <div class="chat-bubble @(isUser ? "user" : "assistant")">
-                            <div class="bubble-avatar">
-                                @(isUser ? "U" : "AI")
-                            </div>
+                            @if (isUser && !string.IsNullOrEmpty(userAvatarPath))
+                            {
+                                <img class="bubble-avatar bubble-avatar-img" src="@userAvatarPath" alt="@userFullName" />
+                            }
+                            else
+                            {
+                                <div class="bubble-avatar">@(isUser ? userInitial : "AI")</div>
+                            }
                             <div class="bubble-body">
                                 @if (isUser)
                                 {
@@ -147,6 +155,8 @@
 @section Scripts {
 <script>
 const messagesEl = document.getElementById('messages');
+const USER_AVATAR_PATH = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(userAvatarPath ?? ""));
+const USER_INITIAL = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(userInitial));
 
 function scrollToBottom() { messagesEl.scrollTop = messagesEl.scrollHeight; }
 function renderMarkdown(text){
@@ -164,9 +174,17 @@ function appendBubble(role, content, sources){
     const wrap = document.createElement('div');
     wrap.className = 'chat-bubble ' + (isUser ? 'user' : 'assistant');
 
-    const avatar = document.createElement('div');
-    avatar.className = 'bubble-avatar';
-    avatar.textContent = isUser ? 'U' : 'AI';
+    let avatar;
+    if (isUser && USER_AVATAR_PATH) {
+        avatar = document.createElement('img');
+        avatar.className = 'bubble-avatar bubble-avatar-img';
+        avatar.src = USER_AVATAR_PATH;
+        avatar.alt = 'avatar';
+    } else {
+        avatar = document.createElement('div');
+        avatar.className = 'bubble-avatar';
+        avatar.textContent = isUser ? USER_INITIAL : 'AI';
+    }
 
     const body = document.createElement('div');
     body.className = 'bubble-body';

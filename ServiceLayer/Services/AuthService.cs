@@ -12,16 +12,16 @@ public class AuthService : IAuthService
     public async Task<LoginResult> LoginAsync(string username, string password)
     {
         if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
-            return new LoginResult(false, "Username và password không được trống", null, null, null, null);
+            return new LoginResult(false, "Username và password không được trống", null, null, null, null, null);
 
         var user = await _userRepo.GetByUsernameAsync(username.Trim());
         if (user is null)
-            return new LoginResult(false, "Tài khoản không tồn tại", null, null, null, null);
+            return new LoginResult(false, "Tài khoản không tồn tại", null, null, null, null, null);
 
         if (!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
-            return new LoginResult(false, "Sai mật khẩu", null, null, null, null);
+            return new LoginResult(false, "Sai mật khẩu", null, null, null, null, null);
 
-        return new LoginResult(true, null, user.Id, user.Username, user.FullName, user.Role);
+        return new LoginResult(true, null, user.Id, user.Username, user.FullName, user.Role, user.AvatarPath);
     }
 
     public async Task<RegisterResult> RegisterAsync(string username, string email, string password, string fullName)

@@ -713,6 +713,11 @@ h1, h2, h3, h4, h5, h6 { color: var(--c-ink); font-weight: 700; letter-spacing: 
     background: var(--g-brand);
     box-shadow: 0 6px 18px rgba(99,102,241,.45), inset 0 1px 0 rgba(255,255,255,.2);
 }
+.chat-bubble .bubble-avatar-img {
+    object-fit: cover;
+    background: transparent;
+    box-shadow: 0 6px 18px rgba(67,56,202,.4);
+}
 
 .chat-bubble .bubble-body {
     max-width: 78%;
@@ -1190,3 +1195,70 @@ footer.text-muted {
     .chat-sidebar { display: none; }
     .chat-bubble .bubble-body { max-width: 88%; }
 }
+
+/* ===== Navbar avatar image ===== */
+.user-chip .avatar-img {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    object-fit: cover;
+    box-shadow: 0 4px 12px rgba(99,102,241,.4);
+    flex-shrink: 0;
+}
+
+/* ===== Profile Page ===== */
+.profile-avatar-wrap {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    cursor: pointer;
+    user-select: none;
+}
+.profile-avatar {
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid rgba(99,102,241,.4);
+    box-shadow: 0 8px 24px rgba(99,102,241,.3);
+    display: block;
+}
+.profile-avatar-initials {
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: var(--g-brand);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.8rem;
+    font-weight: 700;
+    box-shadow: 0 8px 24px rgba(99,102,241,.3);
+}
+.profile-avatar-overlay {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: rgba(0,0,0,.52);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0;
+    transition: opacity .2s;
+    color: white;
+    font-size: 1.6rem;
+}
+.profile-avatar-wrap:hover .profile-avatar-overlay { opacity: 1; }
+
+.profile-info-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--c-border);
+    gap: 8px;
+}
+.profile-info-row:last-child { border-bottom: none; }
+.profile-info-label {
+    color: var(--c-muted);
+    font-size: .84rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+.profile-info-val { font-size: .9rem; }

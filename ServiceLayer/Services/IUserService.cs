@@ -11,4 +11,7 @@ public interface IUserService
     Task<(bool Success, string? Error)> ResetPasswordAsync(string id, string newPassword);
     Task<(bool Success, string? Error)> DeleteAsync(string id);
     Task<(long Total, long Admins, long Lecturers, long Students)> GetCountsAsync();
+    Task<(bool Success, string? Error)> UpdateProfileAsync(string id, string fullName, string email, string? bio);
+    Task<(bool Success, string? Error)> UpdateAvatarAsync(string id, string avatarPath);
+    Task<(bool Success, string? Error)> ChangePasswordAsync(string id, string currentPassword, string newPassword);
 }

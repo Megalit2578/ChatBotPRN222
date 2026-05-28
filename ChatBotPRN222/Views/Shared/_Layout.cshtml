@@ -2,6 +2,7 @@
     var isAuthed = User?.Identity?.IsAuthenticated == true;
     var fullName = User?.FindFirst("FullName")?.Value ?? User?.Identity?.Name;
     var role = User?.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+    var avatarPath = User?.FindFirst("AvatarPath")?.Value;
     var isAdmin = User?.IsInRole("Admin") == true;
     var isLecturer = User?.IsInRole("Lecturer") == true;
     var canManageDocs = isAdmin || isLecturer;
@@ -64,13 +65,22 @@
                     </ul>
                     <ul class="navbar-nav align-items-center">
                         <li class="nav-item me-3">
-                            <div class="user-chip">
-                                <div class="avatar">@((fullName ?? "U").Substring(0, 1).ToUpper())</div>
+                            <a class="user-chip text-decoration-none"
+                               asp-controller="Profile" asp-action="Index"
+                               title="Xem hồ sơ">
+                                @if (!string.IsNullOrEmpty(avatarPath))
+                                {
+                                    <img class="avatar-img" src="@avatarPath" alt="@fullName" />
+                                }
+                                else
+                                {
+                                    <div class="avatar">@((fullName ?? "U").Substring(0, 1).ToUpper())</div>
+                                }
                                 <div class="ms-2 d-none d-md-block">
                                     <div class="fw-semibold lh-1">@fullName</div>
                                     <span class="badge @roleBadge mt-1">@role</span>
                                 </div>
-                            </div>
+                            </a>
                         </li>
                         <li class="nav-item">
                             <a class="btn btn-sm btn-outline-light" asp-controller="Auth" asp-action="Logout">

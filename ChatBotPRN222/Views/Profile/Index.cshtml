@@ -1,0 +1,178 @@
+@model ProfileViewModel
+@{
+    ViewData["Title"] = "Hồ sơ";
+    var initial = (!string.IsNullOrEmpty(Model.FullName) ? Model.FullName : Model.Username).Substring(0, 1).ToUpper();
+    var roleBadge = Model.Role switch
+    {
+        "Admin" => "bg-danger",
+        "Lecturer" => "bg-warning text-dark",
+        _ => "bg-info text-dark"
+    };
+    var hasAvatar = !string.IsNullOrEmpty(Model.AvatarPath);
+}
+
+<div class="page-shell">
+    <div class="page-head">
+        <div>
+            <h1><span class="ico"><i class="bi bi-person-circle"></i></span>Hồ sơ của bạn</h1>
+            <p class="sub">Chỉnh sửa thông tin cá nhân và ảnh đại diện</p>
+        </div>
+        <a class="btn btn-outline-primary" asp-controller="Chat" asp-action="Index">
+            <i class="bi bi-chat-dots me-1"></i>Quay lại Chat
+        </a>
+    </div>
+
+    @if (TempData["PwdSuccess"] is string ps)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm mb-3">
+            <i class="bi bi-check-circle me-1"></i>@ps
+            <button class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["PwdError"] is string pe)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-3">
+            <i class="bi bi-exclamation-triangle me-1"></i>@pe
+            <button class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <!-- Avatar Card -->
+            <div class="card text-center">
+                <div class="card-header grad"><i class="bi bi-person-circle"></i> Ảnh đại diện</div>
+                <div class="card-body py-4">
+                    <form id="avatarForm" asp-action="UploadAvatar" method="post" enctype="multipart/form-data">
+                        @Html.AntiForgeryToken()
+                        <div class="profile-avatar-wrap mx-auto mb-3"
+                             title="Nhấn để thay đổi ảnh"
+                             onclick="document.getElementById('avatarInput').click()">
+                            <img id="avatarPreview"
+                                 src="@Model.AvatarPath"
+                                 class="profile-avatar @(!hasAvatar ? "d-none" : "")"
+                                 alt="Avatar" />
+                            <div id="avatarInitials"
+                                 class="profile-avatar-initials @(hasAvatar ? "d-none" : "")">
+                                @initial
+                            </div>
+                            <div class="profile-avatar-overlay">
+                                <i class="bi bi-camera-fill"></i>
+                            </div>
+                        </div>
+                        <input type="file" id="avatarInput" name="avatar"
+                               accept="image/jpeg,image/png,image/webp,image/gif"
+                               class="d-none" onchange="handleAvatarChange(this)" />
+                    </form>
+                    <p class="small text-muted mb-0">Nhấn vào ảnh để thay đổi<br>JPG, PNG, WEBP · Tối đa 2 MB</p>
+                </div>
+            </div>
+
+            <!-- Account Info Card -->
+            <div class="card mt-3">
+                <div class="card-header"><i class="bi bi-info-circle text-primary"></i> Thông tin tài khoản</div>
+                <div class="card-body p-0">
+                    <div class="profile-info-row px-3">
+                        <span class="profile-info-label"><i class="bi bi-person"></i>Username</span>
+                        <span class="profile-info-val fw-semibold">@Model.Username</span>
+                    </div>
+                    <div class="profile-info-row px-3">
+                        <span class="profile-info-label"><i class="bi bi-shield"></i>Vai trò</span>
+                        <span class="badge @roleBadge">@Model.Role</span>
+                    </div>
+                    <div class="profile-info-row px-3">
+                        <span class="profile-info-label"><i class="bi bi-calendar3"></i>Tham gia</span>
+                        <span class="profile-info-val text-muted">@Model.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <!-- Basic Info Form -->
+            <div class="card">
+                <div class="card-header grad"><i class="bi bi-pencil-square"></i> Thông tin cơ bản</div>
+                <div class="card-body">
+                    <form asp-action="Update" method="post">
+                        @Html.AntiForgeryToken()
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Họ và tên <span class="text-danger">*</span></label>
+                            <input name="fullName" value="@Model.FullName" class="form-control" required placeholder="Nhập họ và tên" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Email</label>
+                            <input name="email" type="email" value="@Model.Email" class="form-control" placeholder="email@example.com" />
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label small fw-semibold">Giới thiệu bản thân</label>
+                            <textarea name="bio" class="form-control" rows="3"
+                                      placeholder="Viết vài dòng về bạn...">@Model.Bio</textarea>
+                        </div>
+                        <button class="btn btn-brand">
+                            <i class="bi bi-check-lg me-1"></i>Lưu thông tin
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Change Password -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <i class="bi bi-lock text-primary"></i> Đổi mật khẩu
+                </div>
+                <div class="card-body">
+                    <form asp-action="ChangePassword" method="post">
+                        @Html.AntiForgeryToken()
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Mật khẩu hiện tại</label>
+                            <input name="currentPassword" type="password" class="form-control"
+                                   required placeholder="Nhập mật khẩu hiện tại" autocomplete="current-password" />
+                        </div>
+                        <div class="row g-3 mb-4">
+                            <div class="col-sm-6">
+                                <label class="form-label small fw-semibold">Mật khẩu mới</label>
+                                <input name="newPassword" type="password" class="form-control"
+                                       required minlength="6" placeholder="Tối thiểu 6 ký tự" autocomplete="new-password" />
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label small fw-semibold">Xác nhận mật khẩu</label>
+                                <input name="confirmPassword" type="password" class="form-control"
+                                       required minlength="6" placeholder="Nhập lại mật khẩu mới" autocomplete="new-password" />
+                            </div>
+                        </div>
+                        <button class="btn btn-outline-primary">
+                            <i class="bi bi-key me-1"></i>Đổi mật khẩu
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+function handleAvatarChange(input) {
+    if (!input.files || !input.files[0]) return;
+    const file = input.files[0];
+
+    // Validate size client-side
+    if (file.size > 2 * 1024 * 1024) {
+        alert('Ảnh không được vượt quá 2 MB.');
+        input.value = '';
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        const img = document.getElementById('avatarPreview');
+        const initials = document.getElementById('avatarInitials');
+        img.src = e.target.result;
+        img.classList.remove('d-none');
+        initials.classList.add('d-none');
+        document.getElementById('avatarForm').submit();
+    };
+    reader.readAsDataURL(file);
+}
+</script>
+}
