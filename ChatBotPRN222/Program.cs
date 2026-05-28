@@ -17,6 +17,7 @@ namespace ChatBotPRN222
             // === Config ===
             builder.Services.Configure<MongoDbSettings>(builder.Configuration.GetSection("MongoDb"));
             builder.Services.Configure<GeminiSettings>(builder.Configuration.GetSection("Gemini"));
+            builder.Services.Configure<GroqSettings>(builder.Configuration.GetSection("Groq"));
 
             // === Upload size limits (2GB) ===
             const long maxUploadBytes = 2048L * 1024 * 1024;

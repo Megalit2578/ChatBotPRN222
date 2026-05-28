@@ -11,12 +11,14 @@ public class GeminiService : IGeminiService
 {
     private readonly HttpClient _http;
     private readonly GeminiSettings _settings;
+    private readonly GroqSettings _groq;
     private readonly ILogger<GeminiService> _logger;
 
-    public GeminiService(HttpClient http, IOptions<GeminiSettings> options, ILogger<GeminiService> logger)
+    public GeminiService(HttpClient http, IOptions<GeminiSettings> options, IOptions<GroqSettings> groqOptions, ILogger<GeminiService> logger)
     {
         _http = http;
         _settings = options.Value;
+        _groq = groqOptions.Value;
         _logger = logger;
     }
 
@@ -65,16 +67,37 @@ public class GeminiService : IGeminiService
 
         try
         {
-            using var req = new HttpRequestMessage(HttpMethod.Post, url)
+            HttpResponseMessage res = null!;
+            string text = string.Empty;
+            int[] retryDelaysMs = [1500, 3000, 6000];
+
+            for (int attempt = 0; attempt <= retryDelaysMs.Length; attempt++)
             {
-                Content = new StringContent(body, Encoding.UTF8, "application/json")
-            };
-            using var res = await _http.SendAsync(req, ct);
-            var text = await res.Content.ReadAsStringAsync(ct);
+                using var req = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = new StringContent(body, Encoding.UTF8, "application/json")
+                };
+                res = await _http.SendAsync(req, ct);
+                text = await res.Content.ReadAsStringAsync(ct);
+
+                if (res.IsSuccessStatusCode || (int)res.StatusCode != 429)
+                    break;
+
+                if (attempt < retryDelaysMs.Length)
+                {
+                    _logger.LogWarning("Gemini 429 – retry {Attempt}/{Max} after {Delay}ms", attempt + 1, retryDelaysMs.Length, retryDelaysMs[attempt]);
+                    await Task.Delay(retryDelaysMs[attempt], ct);
+                }
+            }
 
             if (!res.IsSuccessStatusCode)
             {
                 _logger.LogWarning("Gemini API error {Status}: {Body}", res.StatusCode, text);
+                if ((int)res.StatusCode == 429 && !string.IsNullOrEmpty(_groq.ApiKey))
+                {
+                    _logger.LogInformation("Gemini quota exhausted — switching to Groq fallback");
+                    return await CallGroqAsync(question, contextChunks, history, ct);
+                }
                 return BuildFallback(contextChunks) +
                        $"\n\n_(Gemini API trả về {(int)res.StatusCode}, đã dùng fallback.)_";
             }
@@ -102,6 +125,67 @@ public class GeminiService : IGeminiService
         {
             _logger.LogError(ex, "Gemini call failed");
             return BuildFallback(contextChunks) + "\n\n_(Lỗi mạng khi gọi Gemini, đã dùng fallback.)_";
+        }
+    }
+
+    private async Task<string> CallGroqAsync(
+        string question,
+        IReadOnlyList<DocumentChunk> contextChunks,
+        IReadOnlyList<ChatMessage> history,
+        CancellationToken ct)
+    {
+        var systemPrompt = BuildSystemPrompt(contextChunks);
+        var messages = new List<object>
+        {
+            new { role = "system", content = systemPrompt }
+        };
+
+        foreach (var msg in history.TakeLast(6))
+            messages.Add(new { role = msg.Role == "assistant" ? "assistant" : "user", content = msg.Content });
+
+        messages.Add(new { role = "user", content = question });
+
+        var payload = new
+        {
+            model = _groq.Model,
+            messages,
+            temperature = 0.3,
+            max_tokens = 1024
+        };
+
+        var url = $"{_groq.BaseUrl}/chat/completions";
+        var body = JsonSerializer.Serialize(payload);
+
+        try
+        {
+            using var req = new HttpRequestMessage(HttpMethod.Post, url)
+            {
+                Content = new StringContent(body, Encoding.UTF8, "application/json")
+            };
+            req.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _groq.ApiKey);
+
+            using var res = await _http.SendAsync(req, ct);
+            var text = await res.Content.ReadAsStringAsync(ct);
+
+            if (!res.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("Groq API error {Status}: {Body}", res.StatusCode, text);
+                return BuildFallback(contextChunks) + $"\n\n_(Cả Gemini và Groq đều lỗi {(int)res.StatusCode}.)_";
+            }
+
+            using var doc = JsonDocument.Parse(text);
+            var content = doc.RootElement
+                .GetProperty("choices")[0]
+                .GetProperty("message")
+                .GetProperty("content")
+                .GetString();
+
+            return content?.Trim() ?? BuildFallback(contextChunks);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Groq call failed");
+            return BuildFallback(contextChunks) + "\n\n_(Lỗi mạng khi gọi Groq.)_";
         }
     }
 
