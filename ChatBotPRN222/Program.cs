@@ -1,8 +1,8 @@
 using DataAccessLayer.Context;
 using DataAccessLayer.Repositories;
-using DataAccessLayer.Settings;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.EntityFrameworkCore;
 using ServiceLayer.Services;
 using ServiceLayer.Settings;
 
@@ -15,7 +15,6 @@ namespace ChatBotPRN222
             var builder = WebApplication.CreateBuilder(args);
 
             // === Config ===
-            builder.Services.Configure<MongoDbSettings>(builder.Configuration.GetSection("MongoDb"));
             builder.Services.Configure<GeminiSettings>(builder.Configuration.GetSection("Gemini"));
             builder.Services.Configure<GroqSettings>(builder.Configuration.GetSection("Groq"));
 
@@ -36,8 +35,11 @@ namespace ChatBotPRN222
                 o.MaxRequestBodySize = maxUploadBytes;
             });
 
+            // === Database ===
+            builder.Services.AddDbContext<AppDbContext>(options =>
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
             // === DAL ===
-            builder.Services.AddSingleton<MongoDbContext>();
             builder.Services.AddScoped<IUserRepository, UserRepository>();
             builder.Services.AddScoped<ISubjectRepository, SubjectRepository>();
             builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
@@ -104,10 +106,14 @@ namespace ChatBotPRN222
                 name: "default",
                 pattern: "{controller=Home}/{action=Index}/{id?}");
 
+            // === DB Init & Seed ===
             using (var scope = app.Services.CreateScope())
             {
                 try
                 {
+                    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                    db.Database.EnsureCreated();
+
                     var auth = scope.ServiceProvider.GetRequiredService<IAuthService>();
                     var subjects = scope.ServiceProvider.GetRequiredService<ISubjectService>();
                     await auth.EnsureSeedUsersAsync();
@@ -116,7 +122,7 @@ namespace ChatBotPRN222
                 catch (Exception ex)
                 {
                     var logger = app.Services.GetRequiredService<ILogger<Program>>();
-                    logger.LogWarning(ex, "Seeding skipped — check MongoDB connection in appsettings.json");
+                    logger.LogWarning(ex, "DB init or seeding failed — check connection string in appsettings.json");
                 }
             }
 

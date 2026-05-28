@@ -1,61 +1,41 @@
 using DataAccessLayer.Context;
 using DataAccessLayer.Entities;
-using MongoDB.Bson;
-using MongoDB.Driver;
+using Microsoft.EntityFrameworkCore;
 
 namespace DataAccessLayer.Repositories;
 
 public class DocumentChunkRepository : IDocumentChunkRepository
 {
-    private readonly MongoDbContext _context;
-    public DocumentChunkRepository(MongoDbContext context) => _context = context;
+    private readonly AppDbContext _context;
+    public DocumentChunkRepository(AppDbContext context) => _context = context;
 
-    public Task InsertManyAsync(IEnumerable<DocumentChunk> chunks)
-        => _context.DocumentChunks.InsertManyAsync(chunks);
+    public async Task InsertManyAsync(IEnumerable<DocumentChunk> chunks)
+    {
+        _context.DocumentChunks.AddRange(chunks);
+        await _context.SaveChangesAsync();
+    }
 
     public async Task<List<DocumentChunk>> SearchAsync(string query, string? subjectId, int limit)
     {
-        var filterBuilder = Builders<DocumentChunk>.Filter;
-        FilterDefinition<DocumentChunk> filter = filterBuilder.Text(query);
+        if (string.IsNullOrWhiteSpace(query)) return new List<DocumentChunk>();
+
+        var q = _context.DocumentChunks.AsQueryable();
+
         if (!string.IsNullOrEmpty(subjectId))
-            filter = filterBuilder.And(filter, filterBuilder.Eq(c => c.SubjectId, subjectId));
+            q = q.Where(c => c.SubjectId == subjectId);
 
-        var projection = Builders<DocumentChunk>.Projection
-            .MetaTextScore("textScore")
-            .Include(c => c.Content)
-            .Include(c => c.DocumentId)
-            .Include(c => c.SubjectId)
-            .Include(c => c.DocumentName)
-            .Include(c => c.ChunkIndex)
-            .Include(c => c.Page);
+        q = q.Where(c => EF.Functions.Like(c.Content, $"%{query}%"));
 
-        try
-        {
-            var results = await _context.DocumentChunks
-                .Find(filter)
-                .Project<DocumentChunk>(projection)
-                .Sort(Builders<DocumentChunk>.Sort.MetaTextScore("textScore"))
-                .Limit(limit)
-                .ToListAsync();
-            return results;
-        }
-        catch
-        {
-            // Fallback: keyword regex
-            var keywords = query.Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                .Where(k => k.Length >= 2).ToList();
-            if (keywords.Count == 0) return new List<DocumentChunk>();
-
-            var regex = new BsonRegularExpression(string.Join("|", keywords.Select(System.Text.RegularExpressions.Regex.Escape)), "i");
-            var fallback = filterBuilder.Regex(c => c.Content, regex);
-            if (!string.IsNullOrEmpty(subjectId))
-                fallback = filterBuilder.And(fallback, filterBuilder.Eq(c => c.SubjectId, subjectId));
-            return await _context.DocumentChunks.Find(fallback).Limit(limit).ToListAsync();
-        }
+        return await q.Take(limit).ToListAsync();
     }
 
-    public Task DeleteByDocumentAsync(string documentId)
-        => _context.DocumentChunks.DeleteManyAsync(c => c.DocumentId == documentId);
+    public async Task DeleteByDocumentAsync(string documentId)
+    {
+        var chunks = await _context.DocumentChunks
+            .Where(c => c.DocumentId == documentId).ToListAsync();
+        _context.DocumentChunks.RemoveRange(chunks);
+        await _context.SaveChangesAsync();
+    }
 
-    public Task<long> CountAsync() => _context.DocumentChunks.CountDocumentsAsync(_ => true);
+    public async Task<long> CountAsync() => await _context.DocumentChunks.LongCountAsync();
 }

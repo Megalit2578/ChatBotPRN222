@@ -1,47 +1,90 @@
 using DataAccessLayer.Entities;
-using DataAccessLayer.Settings;
-using Microsoft.Extensions.Options;
-using MongoDB.Driver;
+using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace DataAccessLayer.Context;
 
-public class MongoDbContext
+public class AppDbContext : DbContext
 {
-    private readonly IMongoDatabase _database;
+    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
-    public MongoDbContext(IOptions<MongoDbSettings> options)
+    public DbSet<User> Users => Set<User>();
+    public DbSet<Subject> Subjects => Set<Subject>();
+    public DbSet<Document> Documents => Set<Document>();
+    public DbSet<DocumentChunk> DocumentChunks => Set<DocumentChunk>();
+    public DbSet<ChatSession> ChatSessions => Set<ChatSession>();
+    public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        var settings = options.Value;
-        var client = new MongoClient(settings.ConnectionString);
-        _database = client.GetDatabase(settings.DatabaseName);
-        EnsureIndexes();
-    }
-
-    public IMongoCollection<User> Users => _database.GetCollection<User>("users");
-    public IMongoCollection<Subject> Subjects => _database.GetCollection<Subject>("subjects");
-    public IMongoCollection<Document> Documents => _database.GetCollection<Document>("documents");
-    public IMongoCollection<DocumentChunk> DocumentChunks => _database.GetCollection<DocumentChunk>("documentChunks");
-    public IMongoCollection<ChatSession> ChatSessions => _database.GetCollection<ChatSession>("chatSessions");
-    public IMongoCollection<ChatMessage> ChatMessages => _database.GetCollection<ChatMessage>("chatMessages");
-
-    private void EnsureIndexes()
-    {
-        try
+        modelBuilder.Entity<User>(e =>
         {
-            var userIndex = Builders<User>.IndexKeys.Ascending(u => u.Username);
-            Users.Indexes.CreateOne(new CreateIndexModel<User>(userIndex,
-                new CreateIndexOptions { Unique = true, Name = "ux_users_username" }));
+            e.HasKey(u => u.Id);
+            e.HasIndex(u => u.Username).IsUnique();
+            e.Property(u => u.Id).HasMaxLength(36);
+            e.Property(u => u.Username).HasMaxLength(100);
+            e.Property(u => u.Email).HasMaxLength(200);
+            e.Property(u => u.FullName).HasMaxLength(200);
+            e.Property(u => u.Role).HasMaxLength(50).HasDefaultValue("Student");
+            e.Property(u => u.AvatarPath).HasMaxLength(500);
+        });
 
-            var textIndex = Builders<DocumentChunk>.IndexKeys.Text(c => c.Content);
-            DocumentChunks.Indexes.CreateOne(new CreateIndexModel<DocumentChunk>(textIndex,
-                new CreateIndexOptions { Name = "txt_chunks_content", DefaultLanguage = "none" }));
-
-            var chunkSubject = Builders<DocumentChunk>.IndexKeys.Ascending(c => c.SubjectId);
-            DocumentChunks.Indexes.CreateOne(new CreateIndexModel<DocumentChunk>(chunkSubject));
-        }
-        catch
+        modelBuilder.Entity<Subject>(e =>
         {
-            // index may already exist or DB not ready; ignore
-        }
+            e.HasKey(s => s.Id);
+            e.Property(s => s.Id).HasMaxLength(36);
+            e.Property(s => s.Code).HasMaxLength(50);
+            e.Property(s => s.Name).HasMaxLength(200);
+        });
+
+        modelBuilder.Entity<Document>(e =>
+        {
+            e.HasKey(d => d.Id);
+            e.Property(d => d.Id).HasMaxLength(36);
+            e.Property(d => d.SubjectId).HasMaxLength(36);
+            e.Property(d => d.UploadedBy).HasMaxLength(36);
+            e.Property(d => d.FileName).HasMaxLength(500);
+            e.Property(d => d.ContentType).HasMaxLength(100);
+            e.Property(d => d.Status).HasMaxLength(20).HasDefaultValue("Indexed");
+            e.HasIndex(d => d.SubjectId);
+        });
+
+        modelBuilder.Entity<DocumentChunk>(e =>
+        {
+            e.HasKey(c => c.Id);
+            e.Property(c => c.Id).HasMaxLength(36);
+            e.Property(c => c.DocumentId).HasMaxLength(36);
+            e.Property(c => c.SubjectId).HasMaxLength(36);
+            e.Property(c => c.DocumentName).HasMaxLength(500);
+            e.Property(c => c.Content).HasColumnType("nvarchar(max)");
+            e.HasIndex(c => c.SubjectId);
+            e.HasIndex(c => c.DocumentId);
+        });
+
+        modelBuilder.Entity<ChatSession>(e =>
+        {
+            e.HasKey(s => s.Id);
+            e.Property(s => s.Id).HasMaxLength(36);
+            e.Property(s => s.UserId).HasMaxLength(36);
+            e.Property(s => s.SubjectId).HasMaxLength(36);
+            e.Property(s => s.Title).HasMaxLength(500);
+            e.HasIndex(s => s.UserId);
+        });
+
+        modelBuilder.Entity<ChatMessage>(e =>
+        {
+            e.HasKey(m => m.Id);
+            e.Property(m => m.Id).HasMaxLength(36);
+            e.Property(m => m.SessionId).HasMaxLength(36);
+            e.Property(m => m.Role).HasMaxLength(20);
+            e.Property(m => m.Content).HasColumnType("nvarchar(max)");
+            e.HasIndex(m => m.SessionId);
+            e.Property(m => m.Sources)
+                .HasConversion(
+                    v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+                    v => JsonSerializer.Deserialize<List<ChatSource>>(v, (JsonSerializerOptions?)null) ?? new List<ChatSource>()
+                )
+                .HasColumnType("nvarchar(max)");
+        });
     }
 }

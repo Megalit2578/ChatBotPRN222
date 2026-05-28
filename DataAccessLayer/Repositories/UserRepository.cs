@@ -1,32 +1,47 @@
 using DataAccessLayer.Context;
 using DataAccessLayer.Entities;
-using MongoDB.Driver;
+using Microsoft.EntityFrameworkCore;
 
 namespace DataAccessLayer.Repositories;
 
 public class UserRepository : IUserRepository
 {
-    private readonly MongoDbContext _context;
-    public UserRepository(MongoDbContext context) => _context = context;
+    private readonly AppDbContext _context;
+    public UserRepository(AppDbContext context) => _context = context;
 
     public Task<User?> GetByUsernameAsync(string username)
-        => _context.Users.Find(u => u.Username == username).FirstOrDefaultAsync()!;
+        => _context.Users.FirstOrDefaultAsync(u => u.Username == username);
 
     public Task<User?> GetByIdAsync(string id)
-        => _context.Users.Find(u => u.Id == id).FirstOrDefaultAsync()!;
+        => _context.Users.FirstOrDefaultAsync(u => u.Id == id);
 
     public Task<List<User>> GetAllAsync()
-        => _context.Users.Find(_ => true).SortByDescending(u => u.CreatedAt).ToListAsync();
+        => _context.Users.OrderByDescending(u => u.CreatedAt).ToListAsync();
 
-    public Task CreateAsync(User user) => _context.Users.InsertOneAsync(user);
+    public async Task CreateAsync(User user)
+    {
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+    }
 
-    public Task UpdateAsync(User user)
-        => _context.Users.ReplaceOneAsync(u => u.Id == user.Id, user);
+    public async Task UpdateAsync(User user)
+    {
+        _context.Users.Update(user);
+        await _context.SaveChangesAsync();
+    }
 
-    public Task DeleteAsync(string id) => _context.Users.DeleteOneAsync(u => u.Id == id);
+    public async Task DeleteAsync(string id)
+    {
+        var user = await _context.Users.FindAsync(id);
+        if (user != null)
+        {
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
+        }
+    }
 
-    public Task<long> CountAsync() => _context.Users.CountDocumentsAsync(_ => true);
+    public async Task<long> CountAsync() => await _context.Users.LongCountAsync();
 
-    public Task<long> CountByRoleAsync(string role)
-        => _context.Users.CountDocumentsAsync(u => u.Role == role);
+    public async Task<long> CountByRoleAsync(string role)
+        => await _context.Users.LongCountAsync(u => u.Role == role);
 }

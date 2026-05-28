@@ -1,21 +1,25 @@
 using DataAccessLayer.Context;
 using DataAccessLayer.Entities;
-using MongoDB.Driver;
+using Microsoft.EntityFrameworkCore;
 
 namespace DataAccessLayer.Repositories;
 
 public class SubjectRepository : ISubjectRepository
 {
-    private readonly MongoDbContext _context;
-    public SubjectRepository(MongoDbContext context) => _context = context;
+    private readonly AppDbContext _context;
+    public SubjectRepository(AppDbContext context) => _context = context;
 
     public Task<List<Subject>> GetAllAsync()
-        => _context.Subjects.Find(_ => true).SortBy(s => s.Code).ToListAsync();
+        => _context.Subjects.OrderBy(s => s.Code).ToListAsync();
 
     public Task<Subject?> GetByIdAsync(string id)
-        => _context.Subjects.Find(s => s.Id == id).FirstOrDefaultAsync()!;
+        => _context.Subjects.FirstOrDefaultAsync(s => s.Id == id);
 
-    public Task CreateAsync(Subject subject) => _context.Subjects.InsertOneAsync(subject);
+    public async Task CreateAsync(Subject subject)
+    {
+        _context.Subjects.Add(subject);
+        await _context.SaveChangesAsync();
+    }
 
-    public Task<long> CountAsync() => _context.Subjects.CountDocumentsAsync(_ => true);
+    public async Task<long> CountAsync() => await _context.Subjects.LongCountAsync();
 }
