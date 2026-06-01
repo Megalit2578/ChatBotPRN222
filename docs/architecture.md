@@ -1,6 +1,6 @@
 # Kiến trúc MVC 3-Layer — ChatBotPRN222
 
-> ASP.NET Core MVC 8.0 · MongoDB · Gemini AI · Cookie Authentication
+> ASP.NET Core MVC 8.0 · SQL Server (EF Core) · Groq AI · Cookie Authentication
 
 ## 1. Sơ đồ tổng quan
 
@@ -19,21 +19,21 @@ flowchart TB
     subgraph SVC["② SERVICE LAYER (Business Logic) — ServiceLayer.csproj"]
         direction LR
         AuthSvc["🔐 Auth &amp; User<br/>IAuthService · IUserService<br/>BCrypt hashing"]
-        ChatSvc["🤖 Chat &amp; AI<br/>IChatService<br/>IGeminiService (RAG)"]
+        ChatSvc["🤖 Chat &amp; AI<br/>IChatService<br/>IGeminiService → Groq (RAG)"]
         DocSvc["📄 Document Pipeline<br/>IDocumentService<br/>ITextExtractor · IChunker<br/>ISubjectService"]
-        Dtos["📋 DTOs &amp; Settings<br/>LoginResult · RegisterResult<br/>GeminiSettings · GroqSettings"]
+        Dtos["📋 DTOs &amp; Settings<br/>LoginResult · RegisterResult<br/>GroqSettings"]
     end
 
     subgraph DAL["③ DATA ACCESS LAYER — DataAccessLayer.csproj"]
         direction LR
-        Entities["🧬 Entities (POCO + BSON)<br/>User · Subject · Document<br/>DocumentChunk · ChatSession<br/>ChatMessage"]
+        Entities["🧬 Entities (POCO)<br/>User · Subject · Document<br/>DocumentChunk · ChatSession<br/>ChatMessage"]
         Repos["🗄️ Repositories<br/>IUserRepository<br/>ISubjectRepository<br/>IDocumentRepository<br/>IDocumentChunkRepository<br/>IChatRepository"]
-        Ctx["🔌 Context &amp; Settings<br/>MongoDbContext<br/>MongoDbSettings<br/>MongoDB.Driver SDK"]
+        Ctx["🔌 Context<br/>AppDbContext<br/>EF Core · SqlServer Provider"]
         Const["🏷️ Constants<br/>Roles: Admin · Lecturer · Student"]
     end
 
-    Mongo[("☁️ MongoDB Atlas<br/>NoSQL Cloud DB")]
-    Gemini["✨ Gemini AI API<br/>gemini-2.5-flash"]
+    Mongo[("🗄️ SQL Server<br/>Relational DB")]
+    Gemini["✨ Groq AI API<br/>llama-3.3-70b-versatile"]
     Files[("💾 File Storage<br/>wwwroot/uploads")]
 
     Client -->|HTTPS| Controllers
@@ -53,7 +53,7 @@ flowchart TB
 
     Repos --> Entities
     Repos --> Ctx
-    Ctx -->|MongoClient| Mongo
+    Ctx -->|EF Core DbContext| Mongo
 
     classDef pres fill:#eef2ff,stroke:#6366f1,color:#312e81
     classDef svc  fill:#ecfeff,stroke:#0891b2,color:#0e7490
@@ -74,24 +74,24 @@ sequenceDiagram
     actor U as User (Browser)
     participant C as ChatController<br/>(Presentation)
     participant S as ChatService<br/>(Service)
-    participant G as GeminiService
+    participant G as GeminiService (Groq)
     participant R as ChatRepository / DocumentChunkRepository<br/>(DAL)
-    participant DB as MongoDB Atlas
+    participant DB as SQL Server
 
     U->>C: POST /Chat/Ask (question, sessionId)
     C->>S: AskAsync(userId, sessionId, question)
     S->>R: GetSessionAsync(sessionId)
-    R->>DB: find({_id: sessionId})
+    R->>DB: SELECT ... WHERE Id = sessionId
     DB-->>R: ChatSession
     R-->>S: ChatSession
     S->>R: SearchChunks(question, subjectId)
-    R->>DB: vector / text search
+    R->>DB: SELECT ... WHERE Content LIKE keywords
     DB-->>R: List<DocumentChunk>
     R-->>S: Top-K chunks
     S->>G: GenerateAsync(prompt + chunks)
     G-->>S: Câu trả lời + sources
     S->>R: SaveMessageAsync(answer)
-    R->>DB: insert chat_messages
+    R->>DB: INSERT INTO ChatMessages
     S-->>C: AnswerDto
     C-->>U: JSON { content, sources }
 ```
@@ -100,7 +100,7 @@ sequenceDiagram
 
 | Layer | Tham chiếu được phép | Tuyệt đối KHÔNG |
 |---|---|---|
-| **Presentation** | ServiceLayer · DataAccessLayer (chỉ Entities, Constants) | Gọi trực tiếp MongoDB / Gemini API |
+| **Presentation** | ServiceLayer · DataAccessLayer (chỉ Entities, Constants) | Gọi trực tiếp SQL Server / Groq API |
 | **Service** | DataAccessLayer (Interfaces, Entities, Constants) | Tham chiếu ngược lại Presentation |
 | **Data Access** | (không tham chiếu layer nào) | Phụ thuộc Service/Presentation |
 
@@ -117,9 +117,9 @@ sequenceDiagram
 ## 5. Công nghệ & thư viện chính
 
 - **ASP.NET Core MVC 8.0** — routing, controllers, Razor views
-- **MongoDB.Driver** — kết nối MongoDB Atlas
+- **EF Core + Microsoft.EntityFrameworkCore.SqlServer** — kết nối SQL Server
 - **BCrypt.Net-Next** — mã hoá mật khẩu
-- **HttpClient + Gemini REST** — gọi LLM `gemini-2.5-flash`
+- **HttpClient + Groq REST** — gọi LLM `llama-3.3-70b-versatile`
 - **Cookie Authentication** — đăng nhập, claim `NameIdentifier`, `Role`, `FullName`, `AvatarPath`
 - **Bootstrap 5 + Bootstrap Icons** — UI
 - **DOMPurify + marked.js** — render Markdown an toàn cho câu trả lời AI

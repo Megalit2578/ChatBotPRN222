@@ -15,7 +15,6 @@ namespace ChatBotPRN222
             var builder = WebApplication.CreateBuilder(args);
 
             // === Config ===
-            builder.Services.Configure<GeminiSettings>(builder.Configuration.GetSection("Gemini"));
             builder.Services.Configure<GroqSettings>(builder.Configuration.GetSection("Groq"));
 
             // === Upload size limits (2GB) ===

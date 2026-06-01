@@ -1,6 +1,6 @@
 # ChatBotPRN222 - Hệ Thống Hỏi Đáp Tài Liệu Slide PowerPoint 🚀
 
-Dự án **ChatBotPRN222** là một ứng dụng Web ASP.NET Core MVC (sử dụng .NET 8.0 và cơ sở dữ liệu MongoDB) kết hợp sức mạnh của mô hình ngôn ngữ lớn **Gemini AI** để trích xuất nội dung từ slide PowerPoint bài giảng và hỗ trợ sinh viên học tập, đặt câu hỏi trực tiếp dựa trên ngữ cảnh tài liệu học trình.
+Dự án **ChatBotPRN222** là một ứng dụng Web ASP.NET Core MVC (sử dụng .NET 8.0 và cơ sở dữ liệu SQL Server qua Entity Framework Core) kết hợp sức mạnh của mô hình ngôn ngữ lớn **Groq (Llama 3.3)** để trích xuất nội dung từ slide PowerPoint bài giảng và hỗ trợ sinh viên học tập, đặt câu hỏi trực tiếp dựa trên ngữ cảnh tài liệu học trình.
 
 ---
 
@@ -12,14 +12,16 @@ Dự án **ChatBotPRN222** là một ứng dụng Web ASP.NET Core MVC (sử d�
 2. **Visual Studio 2022** (khuyên dùng trên Windows) hoặc **Visual Studio Code**:
    - Nếu dùng VS Code, bạn hãy cài thêm extension **C# Dev Kit**.
 3. **Mạng Internet**:
-   - Cần thiết để kết nối tới Cloud Database (MongoDB Atlas) và Gemini AI API được cấu hình sẵn.
+   - Cần thiết để gọi Groq AI API được cấu hình sẵn.
+4. **SQL Server** (LocalDB, Express hoặc bản đầy đủ):
+   - Dùng làm cơ sở dữ liệu. Cập nhật chuỗi kết nối `DefaultConnection` trong `appsettings.json` cho khớp với SQL Server trên máy bạn. Lần chạy đầu, EF Core sẽ tự tạo schema và seed dữ liệu mẫu.
 
 ---
 
 ## 🛠️ 2. Cấu hình ứng dụng (Configuration)
 Tất cả cấu hình quan trọng nằm trong file **`appsettings.json`** tại thư mục `ChatBotPRN222/ChatBotPRN222/appsettings.json`:
-* **MongoDB**: Dự án đã có sẵn một chuỗi kết nối Cloud MongoDB hoạt động tốt. Bạn không cần cài MongoDB cục bộ trừ khi muốn thay đổi đường dẫn.
-* **Gemini API**: Đã cấu hình sẵn API Key và model `gemini-2.5-flash` để Chatbot hoạt động ngay lập tức.
+* **SQL Server**: Chỉnh `ConnectionStrings:DefaultConnection` trỏ tới SQL Server của bạn. Database và bảng sẽ được EF Core tự tạo (`EnsureCreated`) ở lần chạy đầu.
+* **Groq API**: Đã cấu hình sẵn API Key và model `llama-3.3-70b-versatile` để Chatbot hoạt động ngay lập tức.
 
 ---
 
