@@ -7,14 +7,13 @@ using ServiceLayer.Settings;
 
 namespace ServiceLayer.Services;
 
-// Groq-only LLM service. (Tên giữ nguyên là GeminiService để không phải đổi DI/ChatService.)
-public class GeminiService : IGeminiService
+public class GroqService : IGroqService
 {
     private readonly HttpClient _http;
     private readonly GroqSettings _groq;
-    private readonly ILogger<GeminiService> _logger;
+    private readonly ILogger<GroqService> _logger;
 
-    public GeminiService(HttpClient http, IOptions<GroqSettings> groqOptions, ILogger<GeminiService> logger)
+    public GroqService(HttpClient http, IOptions<GroqSettings> groqOptions, ILogger<GroqService> logger)
     {
         _http = http;
         _groq = groqOptions.Value;

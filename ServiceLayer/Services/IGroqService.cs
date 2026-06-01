@@ -2,7 +2,7 @@ using DataAccessLayer.Entities;
 
 namespace ServiceLayer.Services;
 
-public interface IGeminiService
+public interface IGroqService
 {
     Task<string> GenerateAnswerAsync(
         string question,

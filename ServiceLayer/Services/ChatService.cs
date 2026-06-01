@@ -8,13 +8,13 @@ public class ChatService : IChatService
 {
     private readonly IChatRepository _chatRepo;
     private readonly IDocumentChunkRepository _chunkRepo;
-    private readonly IGeminiService _gemini;
+    private readonly IGroqService _llm;
 
-    public ChatService(IChatRepository chatRepo, IDocumentChunkRepository chunkRepo, IGeminiService gemini)
+    public ChatService(IChatRepository chatRepo, IDocumentChunkRepository chunkRepo, IGroqService llm)
     {
         _chatRepo = chatRepo;
         _chunkRepo = chunkRepo;
-        _gemini = gemini;
+        _llm = llm;
     }
 
     public Task<List<ChatSession>> GetSessionsAsync(string userId) => _chatRepo.GetSessionsForUserAsync(userId);
@@ -52,7 +52,7 @@ public class ChatService : IChatService
 
         var chunks = await _chunkRepo.SearchAsync(question, session.SubjectId, limit: 5);
 
-        var answer = await _gemini.GenerateAnswerAsync(question, chunks, history);
+        var answer = await _llm.GenerateAnswerAsync(question, chunks, history);
 
         var sources = chunks.Select(c => new ChatSource
         {

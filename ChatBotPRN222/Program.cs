@@ -53,7 +53,7 @@ namespace ChatBotPRN222
             builder.Services.AddSingleton<IChunker, SlidingWindowChunker>();
             builder.Services.AddScoped<IDocumentService, DocumentService>();
             builder.Services.AddScoped<IChatService, ChatService>();
-            builder.Services.AddHttpClient<IGeminiService, GeminiService>(c =>
+            builder.Services.AddHttpClient<IGroqService, GroqService>(c =>
             {
                 c.Timeout = TimeSpan.FromSeconds(60);
             });
