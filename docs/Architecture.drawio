@@ -25,7 +25,7 @@
         <mxCell id="bl_svc" parent="bl" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673a6;fontSize=10;verticalAlign=middle;" value="&lt;b&gt;Service&lt;/b&gt;&lt;br/&gt;&lt;font style=&#39;font-size:9px&#39;&gt;Auth · Chat · Document&lt;br/&gt;Subject · User&lt;br/&gt;TextExtractor · Chunker&lt;/font&gt;" vertex="1">
           <mxGeometry height="90" width="140" x="55" y="55" as="geometry" />
         </mxCell>
-        <mxCell id="bl_dtos" parent="bl" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673a6;fontSize=10;verticalAlign=middle;" value="&lt;b&gt;DTOs&lt;/b&gt;&lt;br/&gt;&lt;font style=&#39;font-size:9px&#39;&gt;AuthDtos · ChatDtos&lt;br/&gt;GeminiSettings&lt;br/&gt;GroqSettings&lt;/font&gt;" vertex="1">
+        <mxCell id="bl_dtos" parent="bl" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673a6;fontSize=10;verticalAlign=middle;" value="&lt;b&gt;DTOs&lt;/b&gt;&lt;br/&gt;&lt;font style=&#39;font-size:9px&#39;&gt;AuthDtos · ChatDtos&lt;br/&gt;GroqSettings&lt;/font&gt;" vertex="1">
           <mxGeometry height="90" width="140" x="235" y="55" as="geometry" />
         </mxCell>
         <mxCell id="bo" parent="1" style="swimlane;startSize=28;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=13;fontColor=#1a2a4a;horizontal=1;" value="Business Objects" vertex="1">
@@ -49,7 +49,7 @@
         <mxCell id="dal_ctx" parent="dal" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;fontSize=10;verticalAlign=middle;" value="&lt;b&gt;DbContext&lt;/b&gt;&lt;br/&gt;&lt;font style=&#39;font-size:9px&#39;&gt;MongoDbContext&lt;br/&gt;MongoDbSettings&lt;br/&gt;MongoDB.Driver SDK&lt;/font&gt;" vertex="1">
           <mxGeometry height="90" width="140" x="235" y="55" as="geometry" />
         </mxCell>
-        <mxCell id="gemini" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;fontStyle=1;" value="&lt;b&gt;AI Service&lt;/b&gt;&lt;br/&gt;&lt;font style=&#39;font-size:9px&#39;&gt;GeminiService&lt;br/&gt;gemini-2.5-flash&lt;/font&gt;" vertex="1">
+        <mxCell id="gemini" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;fontStyle=1;" value="&lt;b&gt;AI Service&lt;/b&gt;&lt;br/&gt;&lt;font style=&#39;font-size:9px&#39;&gt;GroqService&lt;br/&gt;llama-3.3-70b-versatile&lt;/font&gt;" vertex="1">
           <mxGeometry height="75" width="125" y="342.5" as="geometry" />
         </mxCell>
         <mxCell id="mongodb" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontStyle=1;" value="DB" vertex="1">
