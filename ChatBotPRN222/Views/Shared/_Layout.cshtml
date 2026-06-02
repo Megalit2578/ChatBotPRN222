@@ -44,6 +44,14 @@
                                 <i class="bi bi-house me-1"></i>Trang chủ
                             </a>
                         </li>
+                        @if (isAdmin)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link @(currentController == "Dashboard" ? "active" : "")" asp-controller="Dashboard" asp-action="Index">
+                                    <i class="bi bi-speedometer2 me-1"></i>Dashboard
+                                </a>
+                            </li>
+                        }
                         <li class="nav-item">
                             <a class="nav-link @(currentController == "Chat" ? "active" : "")" asp-controller="Chat" asp-action="Index">
                                 <i class="bi bi-chat-dots me-1"></i>Hỏi đáp AI
@@ -54,11 +62,21 @@
                                 <i class="bi bi-folder2-open me-1"></i>Tài liệu
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(currentController == "Feedback" && (ViewContext.RouteData.Values["action"] as string) == "Index" ? "active" : "")" asp-controller="Feedback" asp-action="Index">
+                                <i class="bi bi-chat-heart me-1"></i>Góp ý
+                            </a>
+                        </li>
                         @if (isAdmin)
                         {
                             <li class="nav-item">
                                 <a class="nav-link @(currentController == "User" ? "active" : "")" asp-controller="User" asp-action="Index">
                                     <i class="bi bi-people me-1"></i>Người dùng
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link @(currentController == "Feedback" && (ViewContext.RouteData.Values["action"] as string) == "Manage" ? "active" : "")" asp-controller="Feedback" asp-action="Manage">
+                                    <i class="bi bi-inboxes me-1"></i>Quản lý góp ý
                                 </a>
                             </li>
                         }

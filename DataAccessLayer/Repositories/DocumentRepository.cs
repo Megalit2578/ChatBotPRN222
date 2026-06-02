@@ -16,6 +16,30 @@ public class DocumentRepository : IDocumentRepository
     public Task<List<Document>> GetAllAsync()
         => _context.Documents.OrderByDescending(d => d.UploadedAt).ToListAsync();
 
+    public Task<List<Document>> SearchAsync(string? subjectId, string? query)
+    {
+        var docs = _context.Documents.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(subjectId))
+            docs = docs.Where(d => d.SubjectId == subjectId);
+
+        if (!string.IsNullOrWhiteSpace(query))
+        {
+            var q = query.Trim();
+            // Match against subject (name/code) so users can search by môn học, plus document title/filename.
+            var matchedSubjectIds = _context.Subjects
+                .Where(s => s.Name.Contains(q) || s.Code.Contains(q))
+                .Select(s => s.Id);
+
+            docs = docs.Where(d =>
+                d.Title.Contains(q) ||
+                d.FileName.Contains(q) ||
+                matchedSubjectIds.Contains(d.SubjectId));
+        }
+
+        return docs.OrderByDescending(d => d.UploadedAt).ToListAsync();
+    }
+
     public Task<Document?> GetByIdAsync(string id)
         => _context.Documents.FirstOrDefaultAsync(d => d.Id == id);
 

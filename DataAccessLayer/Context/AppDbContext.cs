@@ -14,6 +14,8 @@ public class AppDbContext : DbContext
     public DbSet<DocumentChunk> DocumentChunks => Set<DocumentChunk>();
     public DbSet<ChatSession> ChatSessions => Set<ChatSession>();
     public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
+    public DbSet<Feedback> Feedbacks => Set<Feedback>();
+    public DbSet<FeedbackReply> FeedbackReplies => Set<FeedbackReply>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -41,6 +43,7 @@ public class AppDbContext : DbContext
         {
             e.HasKey(d => d.Id);
             e.Property(d => d.Id).HasMaxLength(36);
+            e.Property(d => d.Title).HasMaxLength(500).HasDefaultValue("");
             e.Property(d => d.SubjectId).HasMaxLength(36);
             e.Property(d => d.UploadedBy).HasMaxLength(36);
             e.Property(d => d.FileName).HasMaxLength(500);
@@ -85,6 +88,32 @@ public class AppDbContext : DbContext
                     v => JsonSerializer.Deserialize<List<ChatSource>>(v, (JsonSerializerOptions?)null) ?? new List<ChatSource>()
                 )
                 .HasColumnType("nvarchar(max)");
+        });
+
+        modelBuilder.Entity<Feedback>(e =>
+        {
+            e.HasKey(f => f.Id);
+            e.Property(f => f.Id).HasMaxLength(36);
+            e.Property(f => f.UserId).HasMaxLength(36);
+            e.Property(f => f.UserName).HasMaxLength(200);
+            e.Property(f => f.UserAvatar).HasMaxLength(500);
+            e.Property(f => f.Content).HasColumnType("nvarchar(max)");
+            e.Property(f => f.AdminReply).HasColumnType("nvarchar(max)");
+            e.Property(f => f.RepliedBy).HasMaxLength(200);
+            e.Property(f => f.RepliedByAvatar).HasMaxLength(500);
+            e.HasIndex(f => f.UserId);
+        });
+
+        modelBuilder.Entity<FeedbackReply>(e =>
+        {
+            e.HasKey(r => r.Id);
+            e.Property(r => r.Id).HasMaxLength(36);
+            e.Property(r => r.FeedbackId).HasMaxLength(36);
+            e.Property(r => r.UserId).HasMaxLength(36);
+            e.Property(r => r.UserName).HasMaxLength(200);
+            e.Property(r => r.UserAvatar).HasMaxLength(500);
+            e.Property(r => r.Content).HasColumnType("nvarchar(max)");
+            e.HasIndex(r => r.FeedbackId);
         });
     }
 }

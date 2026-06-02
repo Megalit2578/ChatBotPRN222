@@ -1,0 +1,67 @@
+@model FeedbackManageViewModel
+@{
+    ViewData["Title"] = "Quản lý góp ý";
+}
+
+<div class="page-shell">
+    <div class="page-head">
+        <div>
+            <h1>
+                <span class="ico"><i class="bi bi-inboxes-fill"></i></span>
+                Quản lý góp ý
+            </h1>
+            <p class="sub"><span>Xem, phản hồi và xử lý góp ý từ người dùng.</span></p>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-sm-6 col-lg-3">
+            <div class="card h-100"><div class="card-body d-flex align-items-center gap-3">
+                <span class="file-icon pdf"><i class="bi bi-chat-square-text-fill"></i></span>
+                <div>
+                    <div class="h4 mb-0">@Model.Total</div>
+                    <div class="small text-muted">Tổng góp ý</div>
+                </div>
+            </div></div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card h-100"><div class="card-body d-flex align-items-center gap-3">
+                <span class="file-icon txt"><i class="bi bi-star-fill"></i></span>
+                <div>
+                    <div class="h4 mb-0">@Model.Average.ToString("0.0") <span class="text-warning fs-6"><i class="bi bi-star-fill"></i></span></div>
+                    <div class="small text-muted">Điểm trung bình</div>
+                </div>
+            </div></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <i class="bi bi-list-ul text-primary"></i>Tất cả góp ý
+            <span class="badge bg-primary-subtle ms-1">@Model.Threads.Count</span>
+        </div>
+        <div class="card-body">
+            @if (Model.Threads.Count == 0)
+            {
+                <div class="text-center p-5 text-muted">
+                    <i class="bi bi-inbox" style="font-size:56px; opacity:.35; color: var(--c-primary);"></i>
+                    <p class="mt-3 mb-0">Chưa có góp ý nào.</p>
+                </div>
+            }
+            else
+            {
+                foreach (var thread in Model.Threads)
+                {
+                    var card = new FeedbackThreadCardViewModel
+                    {
+                        Thread = thread,
+                        CurrentUserId = Model.CurrentUserId,
+                        IsAdmin = true,
+                        ReturnAction = "Manage"
+                    };
+                    <partial name="_FeedbackThread" model="card" />
+                }
+            }
+        </div>
+    </div>
+</div>

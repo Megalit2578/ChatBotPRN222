@@ -20,13 +20,14 @@ public class DocumentService : IDocumentService
     }
 
     public async Task<Document> UploadAsync(Stream content, string fileName, string contentType,
-        long fileSize, string subjectId, string uploadedByUserId)
+        long fileSize, string subjectId, string uploadedByUserId, string? title = null)
     {
         var pages = _extractor.Extract(content, fileName, contentType);
         var chunked = _chunker.Chunk(pages);
 
         var doc = new Document
         {
+            Title = string.IsNullOrWhiteSpace(title) ? Path.GetFileNameWithoutExtension(fileName) : title.Trim(),
             FileName = fileName,
             ContentType = contentType,
             FileSize = fileSize,
@@ -56,6 +57,7 @@ public class DocumentService : IDocumentService
 
     public Task<List<Document>> GetBySubjectAsync(string subjectId) => _docRepo.GetBySubjectAsync(subjectId);
     public Task<List<Document>> GetAllAsync() => _docRepo.GetAllAsync();
+    public Task<List<Document>> SearchAsync(string? subjectId, string? query) => _docRepo.SearchAsync(subjectId, query);
 
     public async Task DeleteAsync(string documentId)
     {

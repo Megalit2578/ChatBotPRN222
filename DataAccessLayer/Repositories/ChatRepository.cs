@@ -50,4 +50,7 @@ public class ChatRepository : IChatRepository
         _context.ChatMessages.Add(message);
         await _context.SaveChangesAsync();
     }
+
+    public Task<int> CountSessionsAsync() => _context.ChatSessions.CountAsync();
+    public Task<int> CountMessagesAsync() => _context.ChatMessages.CountAsync();
 }

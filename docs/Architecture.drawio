@@ -46,7 +46,7 @@
         <mxCell id="dal_repo" parent="dal" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;fontSize=10;verticalAlign=middle;" value="&lt;b&gt;Repository&lt;/b&gt;&lt;br/&gt;&lt;font style=&#39;font-size:9px&#39;&gt;User · Subject&lt;br/&gt;Document · DocumentChunk&lt;br/&gt;Chat&lt;/font&gt;" vertex="1">
           <mxGeometry height="90" width="140" x="55" y="55" as="geometry" />
         </mxCell>
-        <mxCell id="dal_ctx" parent="dal" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;fontSize=10;verticalAlign=middle;" value="&lt;b&gt;DbContext&lt;/b&gt;&lt;br/&gt;&lt;font style=&#39;font-size:9px&#39;&gt;MongoDbContext&lt;br/&gt;MongoDbSettings&lt;br/&gt;MongoDB.Driver SDK&lt;/font&gt;" vertex="1">
+        <mxCell id="dal_ctx" parent="dal" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;fontSize=10;verticalAlign=middle;" value="&lt;b&gt;DbContext&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;AppDbContext&lt;br&gt;EF Core&lt;br&gt;SQL Server&lt;/font&gt;" vertex="1">
           <mxGeometry height="90" width="140" x="235" y="55" as="geometry" />
         </mxCell>
         <mxCell id="gemini" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;fontStyle=1;" value="&lt;b&gt;AI Service&lt;/b&gt;&lt;br/&gt;&lt;font style=&#39;font-size:9px&#39;&gt;GroqService&lt;br/&gt;llama-3.3-70b-versatile&lt;/font&gt;" vertex="1">

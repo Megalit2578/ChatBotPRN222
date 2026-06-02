@@ -26,6 +26,7 @@ public class DocumentIndexViewModel
     public List<Subject> Subjects { get; set; } = new();
     public List<Document> Documents { get; set; } = new();
     public string? SelectedSubjectId { get; set; }
+    public string? SearchQuery { get; set; }
 }
 
 public class UserIndexViewModel

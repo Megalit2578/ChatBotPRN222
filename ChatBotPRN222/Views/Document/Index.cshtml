@@ -50,6 +50,12 @@
                                 </select>
                             </div>
                             <div class="mb-3">
+                                <label class="form-label small fw-semibold">Tiêu đề tài liệu</label>
+                                <input name="title" class="form-control" maxlength="500"
+                                       placeholder="VD: Slide chương 1 - Tổng quan ASP.NET" />
+                                <div class="form-text">Để trống sẽ tự lấy theo tên tệp.</div>
+                            </div>
+                            <div class="mb-3">
                                 <label class="form-label small fw-semibold">Tệp tài liệu</label>
                                 <label class="upload-dropzone d-block" for="fileInput">
                                     <div class="ico"><i class="bi bi-cloud-arrow-up-fill"></i></div>
@@ -84,14 +90,24 @@
             <div class="card">
                 <div class="card-header justify-content-between">
                     <span><i class="bi bi-files text-primary"></i>Danh sách tài liệu <span class="badge bg-primary-subtle ms-1">@Model.Documents.Count</span></span>
-                    <form method="get" class="d-flex gap-2 m-0">
-                        <select name="subjectId" class="form-select form-select-sm" onchange="this.form.submit()" style="min-width:180px;">
+                    <form method="get" class="d-flex gap-2 m-0 flex-wrap">
+                        <div class="input-group input-group-sm" style="min-width:220px;">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" name="q" value="@Model.SearchQuery" class="form-control form-control-sm"
+                                   placeholder="Tìm theo tên môn, tiêu đề..." />
+                        </div>
+                        <select name="subjectId" class="form-select form-select-sm" onchange="this.form.submit()" style="min-width:170px;">
                             <option value="">Tất cả môn</option>
                             @foreach (var s in Model.Subjects)
                             {
                                 <option value="@s.Id" selected="@(Model.SelectedSubjectId == s.Id)">@s.Code - @s.Name</option>
                             }
                         </select>
+                        <button class="btn btn-sm btn-brand" type="submit"><i class="bi bi-search me-1"></i>Tìm</button>
+                        @if (!string.IsNullOrWhiteSpace(Model.SearchQuery) || !string.IsNullOrWhiteSpace(Model.SelectedSubjectId))
+                        {
+                            <a class="btn btn-sm btn-outline-secondary" asp-action="Index" title="Xoá bộ lọc"><i class="bi bi-x-lg"></i></a>
+                        }
                     </form>
                 </div>
                 <div class="card-body p-0">
@@ -112,7 +128,7 @@
                             <table class="table table-hover align-middle mb-0">
                                 <thead>
                                     <tr>
-                                        <th>Tài liệu</th>
+                                        <th>Tiêu đề / Tệp</th>
                                         <th>Môn</th>
                                         <th class="text-end">Kích thước</th>
                                         <th class="text-end">Chunks</th>
@@ -138,7 +154,11 @@
                                         <tr class="doc-row">
                                             <td>
                                                 <span class="file-icon @iconClass"><i class="bi @fileType"></i></span>
-                                                <strong>@d.FileName</strong>
+                                                <strong>@(string.IsNullOrWhiteSpace(d.Title) ? d.FileName : d.Title)</strong>
+                                                @if (!string.IsNullOrWhiteSpace(d.Title))
+                                                {
+                                                    <div class="small text-muted ms-4 ps-1">@d.FileName</div>
+                                                }
                                             </td>
                                             <td><span class="badge bg-light">@(subject?.Code ?? "?")</span></td>
                                             <td class="text-end small">@($"{d.FileSize / 1024.0 / 1024.0:F2} MB")</td>

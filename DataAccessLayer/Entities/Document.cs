@@ -3,6 +3,7 @@ namespace DataAccessLayer.Entities;
 public class Document
 {
     public string Id { get; set; } = Guid.NewGuid().ToString();
+    public string Title { get; set; } = string.Empty;
     public string SubjectId { get; set; } = string.Empty;
     public string UploadedBy { get; set; } = string.Empty;
     public string FileName { get; set; } = string.Empty;

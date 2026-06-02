@@ -21,18 +21,19 @@ public class DocumentController : Controller
 
     private string UserId => User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
 
-    public async Task<IActionResult> Index(string? subjectId = null)
+    public async Task<IActionResult> Index(string? subjectId = null, string? q = null)
     {
         var subjects = await _subjects.GetAllAsync();
-        var docs = string.IsNullOrEmpty(subjectId)
+        var docs = (string.IsNullOrWhiteSpace(subjectId) && string.IsNullOrWhiteSpace(q))
             ? await _docs.GetAllAsync()
-            : await _docs.GetBySubjectAsync(subjectId);
+            : await _docs.SearchAsync(subjectId, q);
 
         return View(new DocumentIndexViewModel
         {
             Subjects = subjects,
             Documents = docs,
-            SelectedSubjectId = subjectId
+            SelectedSubjectId = subjectId,
+            SearchQuery = q
         });
     }
 
@@ -40,7 +41,7 @@ public class DocumentController : Controller
     [Authorize(Policy = "LecturerOrAdmin")]
     [RequestSizeLimit(MaxBytes)]
     [RequestFormLimits(MultipartBodyLengthLimit = MaxBytes)]
-    public async Task<IActionResult> Upload(IFormFile file, string subjectId)
+    public async Task<IActionResult> Upload(IFormFile file, string subjectId, string? title)
     {
         if (file is null || file.Length == 0)
         {
@@ -69,8 +70,8 @@ public class DocumentController : Controller
         try
         {
             using var stream = file.OpenReadStream();
-            var doc = await _docs.UploadAsync(stream, file.FileName, file.ContentType, file.Length, subjectId, UserId);
-            TempData["Success"] = $"Đã index {doc.ChunkCount} chunk từ tài liệu '{doc.FileName}'.";
+            var doc = await _docs.UploadAsync(stream, file.FileName, file.ContentType, file.Length, subjectId, UserId, title);
+            TempData["Success"] = $"Đã index {doc.ChunkCount} chunk từ tài liệu '{doc.Title}'.";
         }
         catch (Exception ex)
         {

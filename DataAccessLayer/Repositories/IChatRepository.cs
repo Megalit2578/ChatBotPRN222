@@ -12,4 +12,7 @@ public interface IChatRepository
 
     Task<List<ChatMessage>> GetMessagesAsync(string sessionId);
     Task AddMessageAsync(ChatMessage message);
+
+    Task<int> CountSessionsAsync();
+    Task<int> CountMessagesAsync();
 }

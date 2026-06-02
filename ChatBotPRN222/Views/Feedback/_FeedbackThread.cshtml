@@ -1,0 +1,79 @@
+@model FeedbackThreadCardViewModel
+@{
+    var f = Model.Thread.Feedback;
+    var isMine = f.UserId == Model.CurrentUserId;
+    var canDeleteFeedback = Model.IsAdmin;
+    var senderBadge = new UserBadgeViewModel { Name = f.UserName, AvatarPath = f.UserAvatar, Subtitle = f.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm") };
+}
+<div class="border rounded-3 p-3 mb-3 @(isMine ? "border-primary-subtle" : "")">
+    <div class="d-flex justify-content-between align-items-start mb-2">
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+            <partial name="_UserBadge" model="senderBadge" />
+            @if (isMine)
+            {
+                <span class="badge bg-primary">Bạn</span>
+            }
+            <span class="text-warning">
+                @for (var i = 1; i <= 5; i++)
+                {
+                    <i class="bi @(i <= f.Rating ? "bi-star-fill" : "bi-star")"></i>
+                }
+            </span>
+        </div>
+        @if (canDeleteFeedback)
+        {
+            <form asp-action="Delete" method="post" class="m-0" onsubmit="return confirm('Xoá góp ý này và toàn bộ phản hồi?');">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@f.Id" />
+                <button class="btn btn-sm btn-outline-danger" title="Xoá góp ý"><i class="bi bi-trash"></i></button>
+            </form>
+        }
+    </div>
+
+    <div class="mb-2">@f.Content</div>
+
+    @if (Model.Thread.Replies.Count > 0)
+    {
+        <div class="ps-3 border-start ms-1">
+            @foreach (var r in Model.Thread.Replies)
+            {
+                var replyMine = r.UserId == Model.CurrentUserId;
+                var replyBadge = new UserBadgeViewModel { Name = r.UserName, AvatarPath = r.UserAvatar, Subtitle = r.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm"), Size = 30 };
+                <div class="d-flex justify-content-between align-items-start py-2 @(r.IsAdmin ? "px-2 rounded-3 bg-light" : "")">
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                            <partial name="_UserBadge" model="replyBadge" />
+                            @if (r.IsAdmin)
+                            {
+                                <span class="badge bg-danger"><i class="bi bi-shield-check me-1"></i>Admin</span>
+                            }
+                            @if (replyMine)
+                            {
+                                <span class="badge bg-primary-subtle text-primary">Bạn</span>
+                            }
+                        </div>
+                        <div class="small ms-1">@r.Content</div>
+                    </div>
+                    @if (Model.IsAdmin || replyMine)
+                    {
+                        <form asp-action="DeleteReply" method="post" class="m-0" onsubmit="return confirm('Xoá phản hồi này?');">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@r.Id" />
+                            <input type="hidden" name="returnAction" value="@Model.ReturnAction" />
+                            <button class="btn btn-sm btn-link text-muted p-0 ms-2" title="Xoá"><i class="bi bi-x-lg"></i></button>
+                        </form>
+                    }
+                </div>
+            }
+        </div>
+    }
+
+    <form asp-action="Reply" method="post" class="d-flex gap-2 m-0 mt-2">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="@f.Id" />
+        <input type="hidden" name="returnAction" value="@Model.ReturnAction" />
+        <input type="text" name="content" class="form-control form-control-sm"
+               placeholder="@(Model.IsAdmin ? "Phản hồi với tư cách Admin..." : "Viết phản hồi...")" required />
+        <button class="btn btn-sm btn-brand" style="white-space:nowrap;"><i class="bi bi-reply me-1"></i>Gửi</button>
+    </form>
+</div>

@@ -1,0 +1,26 @@
+@model UserBadgeViewModel
+@{
+    var initial = string.IsNullOrWhiteSpace(Model.Name) ? "U" : Model.Name.Substring(0, 1).ToUpper();
+    var px = Model.Size + "px";
+    var fontPx = (int)(Model.Size * 0.42) + "px";
+}
+<div class="d-flex align-items-center gap-2">
+    @if (!string.IsNullOrWhiteSpace(Model.AvatarPath))
+    {
+        <img src="@Model.AvatarPath" alt="@Model.Name"
+             style="width:@px; height:@px; border-radius:50%; object-fit:cover; flex-shrink:0;" />
+    }
+    else
+    {
+        <div style="width:@px; height:@px; border-radius:50%; flex-shrink:0; color:#fff; font-weight:700; font-size:@fontPx; display:flex; align-items:center; justify-content:center; background:var(--g-brand, linear-gradient(135deg,#6366f1,#8b5cf6));">
+            @initial
+        </div>
+    }
+    <div class="lh-sm">
+        <div class="fw-semibold">@Model.Name</div>
+        @if (!string.IsNullOrWhiteSpace(Model.Subtitle))
+        {
+            <div class="small text-muted">@Model.Subtitle</div>
+        }
+    </div>
+</div>
