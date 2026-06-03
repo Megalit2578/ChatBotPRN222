@@ -117,62 +117,6 @@ namespace ChatBotPRN222
                     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                     db.Database.EnsureCreated();
 
-                    // EnsureCreated does not migrate existing databases, so patch new
-                    // schema (Document.Title + Feedbacks table) idempotently for older DBs.
-                    db.Database.ExecuteSqlRaw(@"
-IF COL_LENGTH('Documents', 'Title') IS NULL
-    ALTER TABLE [Documents] ADD [Title] nvarchar(500) NOT NULL DEFAULT '';
-
-IF COL_LENGTH('Documents', 'ContentHash') IS NULL
-    ALTER TABLE [Documents] ADD [ContentHash] nvarchar(64) NOT NULL DEFAULT '';
-
-IF OBJECT_ID('Feedbacks', 'U') IS NULL
-CREATE TABLE [Feedbacks] (
-    [Id] nvarchar(36) NOT NULL CONSTRAINT [PK_Feedbacks] PRIMARY KEY,
-    [UserId] nvarchar(36) NOT NULL,
-    [UserName] nvarchar(200) NOT NULL,
-    [UserAvatar] nvarchar(500) NULL,
-    [Rating] int NOT NULL,
-    [Content] nvarchar(max) NOT NULL,
-    [CreatedAt] datetime2 NOT NULL,
-    [AdminReply] nvarchar(max) NULL,
-    [RepliedBy] nvarchar(200) NULL,
-    [RepliedByAvatar] nvarchar(500) NULL,
-    [RepliedAt] datetime2 NULL
-);
-
-IF COL_LENGTH('Feedbacks', 'UserAvatar') IS NULL
-    ALTER TABLE [Feedbacks] ADD [UserAvatar] nvarchar(500) NULL;
-
-IF COL_LENGTH('Feedbacks', 'RepliedByAvatar') IS NULL
-    ALTER TABLE [Feedbacks] ADD [RepliedByAvatar] nvarchar(500) NULL;
-
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Feedbacks_UserId' AND object_id = OBJECT_ID('Feedbacks'))
-    CREATE INDEX [IX_Feedbacks_UserId] ON [Feedbacks] ([UserId]);
-
-IF OBJECT_ID('FeedbackReplies', 'U') IS NULL
-CREATE TABLE [FeedbackReplies] (
-    [Id] nvarchar(36) NOT NULL CONSTRAINT [PK_FeedbackReplies] PRIMARY KEY,
-    [FeedbackId] nvarchar(36) NOT NULL,
-    [UserId] nvarchar(36) NOT NULL,
-    [UserName] nvarchar(200) NOT NULL,
-    [UserAvatar] nvarchar(500) NULL,
-    [Content] nvarchar(max) NOT NULL,
-    [IsAdmin] bit NOT NULL,
-    [CreatedAt] datetime2 NOT NULL
-);
-
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_FeedbackReplies_FeedbackId' AND object_id = OBJECT_ID('FeedbackReplies'))
-    CREATE INDEX [IX_FeedbackReplies_FeedbackId] ON [FeedbackReplies] ([FeedbackId]);
-
--- Migrate legacy single admin reply into the new thread table (one-time, idempotent).
-INSERT INTO [FeedbackReplies] ([Id], [FeedbackId], [UserId], [UserName], [UserAvatar], [Content], [IsAdmin], [CreatedAt])
-SELECT NEWID(), f.[Id], '', ISNULL(f.[RepliedBy], 'Admin'), f.[RepliedByAvatar], f.[AdminReply], 1, ISNULL(f.[RepliedAt], f.[CreatedAt])
-FROM [Feedbacks] f
-WHERE f.[AdminReply] IS NOT NULL AND LTRIM(RTRIM(f.[AdminReply])) <> ''
-  AND NOT EXISTS (SELECT 1 FROM [FeedbackReplies] r WHERE r.[FeedbackId] = f.[Id]);
-");
-
                     var auth = scope.ServiceProvider.GetRequiredService<IAuthService>();
                     var subjects = scope.ServiceProvider.GetRequiredService<ISubjectService>();
                     await auth.EnsureSeedUsersAsync();
