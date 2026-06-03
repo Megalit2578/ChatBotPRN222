@@ -123,6 +123,9 @@ namespace ChatBotPRN222
 IF COL_LENGTH('Documents', 'Title') IS NULL
     ALTER TABLE [Documents] ADD [Title] nvarchar(500) NOT NULL DEFAULT '';
 
+IF COL_LENGTH('Documents', 'ContentHash') IS NULL
+    ALTER TABLE [Documents] ADD [ContentHash] nvarchar(64) NOT NULL DEFAULT '';
+
 IF OBJECT_ID('Feedbacks', 'U') IS NULL
 CREATE TABLE [Feedbacks] (
     [Id] nvarchar(36) NOT NULL CONSTRAINT [PK_Feedbacks] PRIMARY KEY,

@@ -48,6 +48,7 @@ public class AppDbContext : DbContext
             e.Property(d => d.UploadedBy).HasMaxLength(36);
             e.Property(d => d.FileName).HasMaxLength(500);
             e.Property(d => d.ContentType).HasMaxLength(100);
+            e.Property(d => d.ContentHash).HasMaxLength(64).HasDefaultValue("");
             e.Property(d => d.Status).HasMaxLength(20).HasDefaultValue("Indexed");
             e.HasIndex(d => d.SubjectId);
         });

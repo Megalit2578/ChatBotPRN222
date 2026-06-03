@@ -70,8 +70,21 @@ public class DocumentController : Controller
         try
         {
             using var stream = file.OpenReadStream();
-            var doc = await _docs.UploadAsync(stream, file.FileName, file.ContentType, file.Length, subjectId, UserId, title);
-            TempData["Success"] = $"Đã index {doc.ChunkCount} chunk từ tài liệu '{doc.Title}'.";
+            var result = await _docs.UploadAsync(stream, file.FileName, file.ContentType, file.Length, subjectId, UserId, title);
+            var doc = result.Document;
+
+            switch (result.Outcome)
+            {
+                case UploadOutcome.Duplicate:
+                    TempData["Warning"] = $"Tệp '{doc.FileName}' giống hệt tài liệu đã có trong môn học này — đã bỏ qua, không index lại.";
+                    break;
+                case UploadOutcome.Replaced:
+                    TempData["Success"] = $"Tệp '{doc.FileName}' đã tồn tại — đã thay bằng bản mới và index lại {doc.ChunkCount} chunk.";
+                    break;
+                default:
+                    TempData["Success"] = $"Đã index {doc.ChunkCount} chunk từ tài liệu '{doc.Title}'.";
+                    break;
+            }
         }
         catch (Exception ex)
         {
@@ -99,6 +112,41 @@ public class DocumentController : Controller
             await _subjects.CreateAsync(code, name, description);
             TempData["Success"] = "Đã tạo môn học mới.";
         }
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    [Authorize(Policy = "AdminOnly")]
+    public async Task<IActionResult> EditSubject(string id, string code, string name, string description)
+    {
+        if (string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(name))
+        {
+            TempData["Error"] = "Mã và tên môn học không được để trống.";
+            return RedirectToAction(nameof(Index));
+        }
+        await _subjects.UpdateAsync(id, code, name, description);
+        TempData["Success"] = "Đã cập nhật môn học.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    [Authorize(Policy = "AdminOnly")]
+    public async Task<IActionResult> DeleteSubject(string id)
+    {
+        var subject = await _subjects.GetByIdAsync(id);
+        if (subject == null)
+        {
+            TempData["Error"] = "Không tìm thấy môn học.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        // Cascade: remove all documents (and their chunks) in this subject first.
+        var docs = await _docs.GetBySubjectAsync(id);
+        foreach (var d in docs)
+            await _docs.DeleteAsync(d.Id);
+
+        await _subjects.DeleteAsync(id);
+        TempData["Success"] = $"Đã xoá môn '{subject.Code}' cùng {docs.Count} tài liệu liên quan.";
         return RedirectToAction(nameof(Index));
     }
 }

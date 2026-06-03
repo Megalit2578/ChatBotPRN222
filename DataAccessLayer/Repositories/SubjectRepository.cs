@@ -21,5 +21,21 @@ public class SubjectRepository : ISubjectRepository
         await _context.SaveChangesAsync();
     }
 
+    public async Task UpdateAsync(Subject subject)
+    {
+        _context.Subjects.Update(subject);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task DeleteAsync(string id)
+    {
+        var subject = await _context.Subjects.FindAsync(id);
+        if (subject != null)
+        {
+            _context.Subjects.Remove(subject);
+            await _context.SaveChangesAsync();
+        }
+    }
+
     public async Task<long> CountAsync() => await _context.Subjects.LongCountAsync();
 }

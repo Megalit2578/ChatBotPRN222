@@ -43,6 +43,15 @@ public class DocumentRepository : IDocumentRepository
     public Task<Document?> GetByIdAsync(string id)
         => _context.Documents.FirstOrDefaultAsync(d => d.Id == id);
 
+    public Task<Document?> GetBySubjectAndHashAsync(string subjectId, string contentHash)
+        => _context.Documents.FirstOrDefaultAsync(d => d.SubjectId == subjectId && d.ContentHash == contentHash);
+
+    public Task<Document?> GetBySubjectAndFileNameAsync(string subjectId, string fileName)
+        => _context.Documents
+            .Where(d => d.SubjectId == subjectId && d.FileName == fileName)
+            .OrderByDescending(d => d.UploadedAt)
+            .FirstOrDefaultAsync();
+
     public async Task CreateAsync(Document document)
     {
         _context.Documents.Add(document);

@@ -120,6 +120,10 @@
         {
             <div class="container mt-3"><div class="alert alert-danger alert-dismissible fade show shadow-sm"><i class="bi bi-exclamation-triangle me-1"></i>@e<button class="btn-close" data-bs-dismiss="alert"></button></div></div>
         }
+        @if (TempData["Warning"] is string w)
+        {
+            <div class="container mt-3"><div class="alert alert-warning alert-dismissible fade show shadow-sm"><i class="bi bi-exclamation-circle me-1"></i>@w<button class="btn-close" data-bs-dismiss="alert"></button></div></div>
+        }
         @if (TempData["SuccessMessage"] is string sm)
         {
             <div class="container mt-3"><div class="alert alert-success alert-dismissible fade show shadow-sm"><i class="bi bi-check-circle me-1"></i>@sm<button class="btn-close" data-bs-dismiss="alert"></button></div></div>

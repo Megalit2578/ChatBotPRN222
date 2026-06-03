@@ -82,6 +82,50 @@
                             </form>
                         </div>
                     </div>
+
+                    <div class="card mt-3">
+                        <div class="card-header"><i class="bi bi-pencil-square text-primary"></i>Quản lý môn học</div>
+                        <div class="card-body p-0">
+                            @if (Model.Subjects.Count == 0)
+                            {
+                                <div class="text-center text-muted p-3 small">Chưa có môn học nào.</div>
+                            }
+                            else
+                            {
+                                <ul class="list-group list-group-flush">
+                                    @foreach (var s in Model.Subjects)
+                                    {
+                                        <li class="list-group-item">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div class="text-truncate me-2">
+                                                    <span class="badge bg-light text-dark me-1">@s.Code</span>@s.Name
+                                                </div>
+                                                <div class="btn-group flex-shrink-0">
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#editSubj-@s.Id" title="Sửa">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </button>
+                                                    <form asp-action="DeleteSubject" method="post" class="m-0"
+                                                          onsubmit="return confirm('Xoá môn @s.Code? Toàn bộ tài liệu và chunk của môn này cũng sẽ bị xoá.');">
+                                                        <input type="hidden" name="id" value="@s.Id" />
+                                                        <button class="btn btn-sm btn-outline-danger" title="Xoá"><i class="bi bi-trash"></i></button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                            <div class="collapse mt-2" id="editSubj-@s.Id">
+                                                <form asp-action="EditSubject" method="post">
+                                                    <input type="hidden" name="id" value="@s.Id" />
+                                                    <div class="mb-2"><input name="code" class="form-control form-control-sm" value="@s.Code" required /></div>
+                                                    <div class="mb-2"><input name="name" class="form-control form-control-sm" value="@s.Name" required /></div>
+                                                    <div class="mb-2"><textarea name="description" class="form-control form-control-sm" rows="2">@s.Description</textarea></div>
+                                                    <button class="btn btn-sm btn-primary w-100"><i class="bi bi-check-lg me-1"></i>Lưu thay đổi</button>
+                                                </form>
+                                            </div>
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                        </div>
+                    </div>
                 }
             </div>
         }

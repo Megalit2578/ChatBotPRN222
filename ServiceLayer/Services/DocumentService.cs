@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using DataAccessLayer.Entities;
 using DataAccessLayer.Repositories;
 
@@ -19,10 +20,30 @@ public class DocumentService : IDocumentService
         _chunker = chunker;
     }
 
-    public async Task<Document> UploadAsync(Stream content, string fileName, string contentType,
+    public async Task<UploadResult> UploadAsync(Stream content, string fileName, string contentType,
         long fileSize, string subjectId, string uploadedByUserId, string? title = null)
     {
-        var pages = _extractor.Extract(content, fileName, contentType);
+        // Buffer once so we can both hash the bytes and feed them to the extractor.
+        using var ms = new MemoryStream();
+        await content.CopyToAsync(ms);
+        var hash = Convert.ToHexString(SHA256.HashData(ms.ToArray())).ToLowerInvariant();
+
+        // Exact same file (identical bytes) already indexed in this subject — skip re-indexing.
+        var sameHash = await _docRepo.GetBySubjectAndHashAsync(subjectId, hash);
+        if (sameHash != null)
+            return new UploadResult(sameHash, UploadOutcome.Duplicate);
+
+        // Same filename but different content — treat as an updated version: drop the old one first.
+        var outcome = UploadOutcome.Created;
+        var sameName = await _docRepo.GetBySubjectAndFileNameAsync(subjectId, fileName);
+        if (sameName != null)
+        {
+            await DeleteAsync(sameName.Id);
+            outcome = UploadOutcome.Replaced;
+        }
+
+        ms.Position = 0;
+        var pages = _extractor.Extract(ms, fileName, contentType);
         var chunked = _chunker.Chunk(pages);
 
         var doc = new Document
@@ -30,6 +51,7 @@ public class DocumentService : IDocumentService
             Title = string.IsNullOrWhiteSpace(title) ? Path.GetFileNameWithoutExtension(fileName) : title.Trim(),
             FileName = fileName,
             ContentType = contentType,
+            ContentHash = hash,
             FileSize = fileSize,
             SubjectId = subjectId,
             UploadedBy = uploadedByUserId,
@@ -52,7 +74,7 @@ public class DocumentService : IDocumentService
             await _chunkRepo.InsertManyAsync(chunks);
         }
 
-        return doc;
+        return new UploadResult(doc, outcome);
     }
 
     public Task<List<Document>> GetBySubjectAsync(string subjectId) => _docRepo.GetBySubjectAsync(subjectId);

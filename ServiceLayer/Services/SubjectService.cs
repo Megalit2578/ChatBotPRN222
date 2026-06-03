@@ -14,6 +14,19 @@ public class SubjectService : ISubjectService
     public Task CreateAsync(string code, string name, string description)
         => _repo.CreateAsync(new Subject { Code = code.Trim(), Name = name.Trim(), Description = description?.Trim() ?? string.Empty });
 
+    public async Task UpdateAsync(string id, string code, string name, string description)
+    {
+        var subject = await _repo.GetByIdAsync(id);
+        if (subject == null) return;
+
+        subject.Code = code.Trim();
+        subject.Name = name.Trim();
+        subject.Description = description?.Trim() ?? string.Empty;
+        await _repo.UpdateAsync(subject);
+    }
+
+    public Task DeleteAsync(string id) => _repo.DeleteAsync(id);
+
     public async Task EnsureSeedAsync()
     {
         if (await _repo.CountAsync() > 0) return;

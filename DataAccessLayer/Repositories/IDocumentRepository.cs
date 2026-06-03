@@ -8,6 +8,8 @@ public interface IDocumentRepository
     Task<List<Document>> GetAllAsync();
     Task<List<Document>> SearchAsync(string? subjectId, string? query);
     Task<Document?> GetByIdAsync(string id);
+    Task<Document?> GetBySubjectAndHashAsync(string subjectId, string contentHash);
+    Task<Document?> GetBySubjectAndFileNameAsync(string subjectId, string fileName);
     Task CreateAsync(Document document);
     Task DeleteAsync(string id);
 }
