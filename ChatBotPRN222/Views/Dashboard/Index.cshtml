@@ -53,6 +53,40 @@
     </div>
 
     <div class="row g-3 mt-1">
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header"><i class="bi bi-pie-chart-fill text-primary"></i>Người dùng theo vai trò</div>
+                <div class="card-body d-flex align-items-center justify-content-center" style="height:260px;">
+                    <canvas id="rolesChart" height="220"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header"><i class="bi bi-star-half text-primary"></i>Phân bố đánh giá</div>
+                <div class="card-body d-flex align-items-center justify-content-center" style="height:260px;">
+                    <canvas id="ratingChart" height="220"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header"><i class="bi bi-bar-chart-fill text-primary"></i>Tài liệu theo môn</div>
+                <div class="card-body d-flex align-items-center justify-content-center" style="height:260px;">
+                    @if (Model.DocumentsPerSubject.Count == 0)
+                    {
+                        <span class="text-muted small">Chưa có tài liệu.</span>
+                    }
+                    else
+                    {
+                        <canvas id="subjectsChart" height="220"></canvas>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mt-1">
         <div class="col-lg-6">
             <div class="card h-100">
                 <div class="card-header justify-content-between">
@@ -135,3 +169,74 @@
     .stat-amber  { background: linear-gradient(135deg,#f59e0b,#d97706); }
     .stat-rose   { background: linear-gradient(135deg,#f43f5e,#e11d48); }
 </style>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script>
+        (function () {
+            if (typeof Chart === 'undefined') return;
+            Chart.defaults.font.family = "'Be Vietnam Pro','Inter',sans-serif";
+            Chart.defaults.color = '#64748b';
+
+            // Users by role (doughnut)
+            new Chart(document.getElementById('rolesChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Admin', 'Lecturer', 'Student'],
+                    datasets: [{
+                        data: [@Model.Admins, @Model.Lecturers, @Model.Students],
+                        backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6'],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+
+            // Rating distribution (bar)
+            new Chart(document.getElementById('ratingChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['1★', '2★', '3★', '4★', '5★'],
+                    datasets: [{
+                        label: 'Số lượng',
+                        data: [@string.Join(",", Model.RatingCounts)],
+                        backgroundColor: ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e'],
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+                }
+            });
+
+            // Documents per subject (horizontal bar)
+            var subjEl = document.getElementById('subjectsChart');
+            if (subjEl) {
+                new Chart(subjEl, {
+                    type: 'bar',
+                    data: {
+                        labels: @Json.Serialize(Model.DocumentsPerSubject.Select(s => s.Label)),
+                        datasets: [{
+                            label: 'Tài liệu',
+                            data: @Json.Serialize(Model.DocumentsPerSubject.Select(s => s.Count)),
+                            backgroundColor: '#8b5cf6',
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
+                    }
+                });
+            }
+        })();
+    </script>
+}

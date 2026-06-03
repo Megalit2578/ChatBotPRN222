@@ -35,12 +35,30 @@ public class DashboardService : IDashboardService
     {
         var (total, admins, lecturers, students) = await _users.GetCountsAsync();
         var docs = await _documents.GetAllAsync();
+        var subjects = await _subjects.GetAllAsync();
         var feedbacks = await _feedback.GetAllAsync();
 
         var repliedFeedbackIds = (await _replies.GetByFeedbackIdsAsync(feedbacks.Select(f => f.Id)))
             .Select(r => r.FeedbackId)
             .Distinct()
             .ToHashSet();
+
+        // Rating distribution (1..5 stars)
+        var ratingCounts = new int[5];
+        foreach (var f in feedbacks)
+            if (f.Rating >= 1 && f.Rating <= 5) ratingCounts[f.Rating - 1]++;
+
+        // Documents grouped by subject (top 8)
+        var docsPerSubject = docs
+            .GroupBy(d => d.SubjectId)
+            .Select(g => new SubjectDocCount
+            {
+                Label = subjects.FirstOrDefault(s => s.Id == g.Key)?.Code ?? "Khác",
+                Count = g.Count()
+            })
+            .OrderByDescending(x => x.Count)
+            .Take(8)
+            .ToList();
 
         return new DashboardStats
         {
@@ -63,7 +81,10 @@ public class DashboardService : IDashboardService
             FeedbackAwaiting = feedbacks.Count(f => !repliedFeedbackIds.Contains(f.Id)),
 
             RecentDocuments = docs.Take(5).ToList(),
-            RecentFeedback = feedbacks.Take(5).ToList()
+            RecentFeedback = feedbacks.Take(5).ToList(),
+
+            RatingCounts = ratingCounts,
+            DocumentsPerSubject = docsPerSubject
         };
     }
 }
