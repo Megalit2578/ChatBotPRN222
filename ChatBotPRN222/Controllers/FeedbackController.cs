@@ -8,7 +8,9 @@ using ServiceLayer.Services;
 
 namespace ChatBotPRN222.Controllers;
 
-[Authorize]
+// Lecturers are excluded from the feedback feature entirely; Admin-only actions
+// (Manage/Delete) add their own stricter policy on top of this.
+[Authorize(Roles = Roles.Admin + "," + Roles.Student)]
 public class FeedbackController : Controller
 {
     private readonly IFeedbackService _feedback;
@@ -36,7 +38,7 @@ public class FeedbackController : Controller
         }).ToList();
     }
 
-    // Any authenticated user: submit feedback + see ALL feedback (public feed)
+    // Students + Admin only (lecturers are excluded from the feedback feed)
     public async Task<IActionResult> Index()
     {
         var all = await _feedback.GetAllAsync();
