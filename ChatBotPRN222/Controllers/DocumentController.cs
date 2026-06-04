@@ -48,13 +48,15 @@ public class DocumentController : Controller
             return RedirectToAction(nameof(Index));
         }
 
-        if (!download)
+        // Explicit inline/attachment disposition. enableRangeProcessing lets the browser's built-in
+        // PDF viewer fetch byte ranges — without it many browsers fall back to downloading the file.
+        var disposition = new System.Net.Mime.ContentDisposition
         {
-            // Hint the browser to render in-tab instead of downloading.
-            Response.Headers["Content-Disposition"] = $"inline; filename=\"{Uri.EscapeDataString(file.FileName)}\"";
-            return File(file.Content, file.ContentType);
-        }
-        return File(file.Content, file.ContentType, file.FileName);
+            FileName = file.FileName,
+            Inline = !download
+        };
+        Response.Headers.Append("Content-Disposition", disposition.ToString());
+        return File(file.Content, file.ContentType, enableRangeProcessing: true);
     }
 
     [HttpPost]

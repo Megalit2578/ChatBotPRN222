@@ -96,19 +96,20 @@ public class DocumentService : IDocumentService
         var stream = _fileStore.Open(doc.Id, doc.FileName);
         if (stream == null) return null; // file uploaded before original-file storage existed
 
-        var contentType = string.IsNullOrWhiteSpace(doc.ContentType)
-            ? ContentTypeFor(doc.FileName)
-            : doc.ContentType;
+        // Prefer a known type derived from the extension — the ContentType stored at upload time
+        // is sometimes generic (e.g. application/octet-stream), which forces browsers to download.
+        var contentType = ContentTypeFor(doc.FileName)
+            ?? (string.IsNullOrWhiteSpace(doc.ContentType) ? "application/octet-stream" : doc.ContentType);
         return new DocumentFile(stream, contentType, doc.FileName);
     }
 
-    private static string ContentTypeFor(string fileName) => Path.GetExtension(fileName).ToLowerInvariant() switch
+    private static string? ContentTypeFor(string fileName) => Path.GetExtension(fileName).ToLowerInvariant() switch
     {
         ".pdf" => "application/pdf",
         ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         ".pptx" => "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-        ".txt" => "text/plain",
-        _ => "application/octet-stream"
+        ".txt" => "text/plain; charset=utf-8",
+        _ => null
     };
 
     public async Task DeleteAsync(string documentId)
