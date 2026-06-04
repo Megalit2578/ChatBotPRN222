@@ -37,6 +37,26 @@ public class DocumentController : Controller
         });
     }
 
+    // Open the original uploaded file. download=true forces a download; otherwise the browser
+    // shows it inline when it can (PDF/TXT) and downloads office files.
+    public async Task<IActionResult> Open(string id, bool download = false)
+    {
+        var file = await _docs.OpenAsync(id);
+        if (file == null)
+        {
+            TempData["Error"] = "Không tìm thấy tệp gốc. Tài liệu có thể đã được upload trước khi bật tính năng lưu tệp.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (!download)
+        {
+            // Hint the browser to render in-tab instead of downloading.
+            Response.Headers["Content-Disposition"] = $"inline; filename=\"{Uri.EscapeDataString(file.FileName)}\"";
+            return File(file.Content, file.ContentType);
+        }
+        return File(file.Content, file.ContentType, file.FileName);
+    }
+
     [HttpPost]
     [Authorize(Policy = "LecturerOrAdmin")]
     [RequestSizeLimit(MaxBytes)]

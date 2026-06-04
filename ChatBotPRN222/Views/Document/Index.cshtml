@@ -177,10 +177,7 @@
                                         <th class="text-end">Kích thước</th>
                                         <th class="text-end">Chunks</th>
                                         <th>Upload lúc</th>
-                                        @if (canUpload)
-                                        {
-                                            <th></th>
-                                        }
+                                        <th class="text-end">Thao tác</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -198,7 +195,10 @@
                                         <tr class="doc-row">
                                             <td>
                                                 <span class="file-icon @iconClass"><i class="bi @fileType"></i></span>
-                                                <strong>@(string.IsNullOrWhiteSpace(d.Title) ? d.FileName : d.Title)</strong>
+                                                <a asp-action="Open" asp-route-id="@d.Id" target="_blank" rel="noopener"
+                                                   class="fw-bold text-decoration-none" title="Mở tài liệu trong tab mới">
+                                                    @(string.IsNullOrWhiteSpace(d.Title) ? d.FileName : d.Title)
+                                                </a>
                                                 @if (!string.IsNullOrWhiteSpace(d.Title))
                                                 {
                                                     <div class="small text-muted ms-4 ps-1">@d.FileName</div>
@@ -208,16 +208,26 @@
                                             <td class="text-end small">@($"{d.FileSize / 1024.0 / 1024.0:F2} MB")</td>
                                             <td class="text-end"><span class="badge bg-primary-subtle">@d.ChunkCount</span></td>
                                             <td class="small text-muted">@d.UploadedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
-                                            @if (canUpload)
-                                            {
-                                                <td class="text-end">
-                                                    <form asp-action="Delete" method="post" class="m-0" onsubmit="return confirm('Xoá tài liệu này?');">
-                                                        <input type="hidden" name="id" value="@d.Id" />
-                                                        <input type="hidden" name="subjectId" value="@Model.SelectedSubjectId" />
-                                                        <button class="btn btn-sm btn-outline-danger" title="Xoá"><i class="bi bi-trash"></i></button>
-                                                    </form>
-                                                </td>
-                                            }
+                                            <td class="text-end">
+                                                <div class="btn-group">
+                                                    <a asp-action="Open" asp-route-id="@d.Id" target="_blank" rel="noopener"
+                                                       class="btn btn-sm btn-outline-primary" title="Mở tài liệu">
+                                                        <i class="bi bi-eye"></i>
+                                                    </a>
+                                                    <a asp-action="Open" asp-route-id="@d.Id" asp-route-download="true"
+                                                       class="btn btn-sm btn-outline-secondary" title="Tải về">
+                                                        <i class="bi bi-download"></i>
+                                                    </a>
+                                                    @if (canUpload)
+                                                    {
+                                                        <form asp-action="Delete" method="post" class="m-0" onsubmit="return confirm('Xoá tài liệu này?');">
+                                                            <input type="hidden" name="id" value="@d.Id" />
+                                                            <input type="hidden" name="subjectId" value="@Model.SelectedSubjectId" />
+                                                            <button class="btn btn-sm btn-outline-danger" title="Xoá"><i class="bi bi-trash"></i></button>
+                                                        </form>
+                                                    }
+                                                </div>
+                                            </td>
                                         </tr>
                                     }
                                 </tbody>

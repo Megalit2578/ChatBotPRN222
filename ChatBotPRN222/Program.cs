@@ -53,6 +53,8 @@ namespace ChatBotPRN222
             builder.Services.AddScoped<ISubjectService, SubjectService>();
             builder.Services.AddSingleton<ITextExtractor, TextExtractor>();
             builder.Services.AddSingleton<IChunker, SlidingWindowChunker>();
+            builder.Services.AddSingleton<IDocumentFileStore>(_ =>
+                new LocalDocumentFileStore(Path.Combine(builder.Environment.ContentRootPath, "App_Data", "uploads")));
             builder.Services.AddScoped<IDocumentService, DocumentService>();
             builder.Services.AddScoped<IFeedbackService, FeedbackService>();
             builder.Services.AddScoped<IDashboardService, DashboardService>();

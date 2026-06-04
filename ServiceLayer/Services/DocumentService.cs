@@ -10,14 +10,16 @@ public class DocumentService : IDocumentService
     private readonly IDocumentChunkRepository _chunkRepo;
     private readonly ITextExtractor _extractor;
     private readonly IChunker _chunker;
+    private readonly IDocumentFileStore _fileStore;
 
     public DocumentService(IDocumentRepository docRepo, IDocumentChunkRepository chunkRepo,
-        ITextExtractor extractor, IChunker chunker)
+        ITextExtractor extractor, IChunker chunker, IDocumentFileStore fileStore)
     {
         _docRepo = docRepo;
         _chunkRepo = chunkRepo;
         _extractor = extractor;
         _chunker = chunker;
+        _fileStore = fileStore;
     }
 
     public async Task<UploadResult> UploadAsync(Stream content, string fileName, string contentType,
@@ -60,6 +62,10 @@ public class DocumentService : IDocumentService
         };
         await _docRepo.CreateAsync(doc);
 
+        // Persist the original file so it can be opened/downloaded from the web later.
+        ms.Position = 0;
+        await _fileStore.SaveAsync(doc.Id, fileName, ms);
+
         if (chunked.Count > 0)
         {
             var chunks = chunked.Select((c, i) => new DocumentChunk
@@ -80,10 +86,36 @@ public class DocumentService : IDocumentService
     public Task<List<Document>> GetBySubjectAsync(string subjectId) => _docRepo.GetBySubjectAsync(subjectId);
     public Task<List<Document>> GetAllAsync() => _docRepo.GetAllAsync();
     public Task<List<Document>> SearchAsync(string? subjectId, string? query) => _docRepo.SearchAsync(subjectId, query);
+    public Task<Document?> GetByIdAsync(string documentId) => _docRepo.GetByIdAsync(documentId);
+
+    public async Task<DocumentFile?> OpenAsync(string documentId)
+    {
+        var doc = await _docRepo.GetByIdAsync(documentId);
+        if (doc == null) return null;
+
+        var stream = _fileStore.Open(doc.Id, doc.FileName);
+        if (stream == null) return null; // file uploaded before original-file storage existed
+
+        var contentType = string.IsNullOrWhiteSpace(doc.ContentType)
+            ? ContentTypeFor(doc.FileName)
+            : doc.ContentType;
+        return new DocumentFile(stream, contentType, doc.FileName);
+    }
+
+    private static string ContentTypeFor(string fileName) => Path.GetExtension(fileName).ToLowerInvariant() switch
+    {
+        ".pdf" => "application/pdf",
+        ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        ".pptx" => "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        ".txt" => "text/plain",
+        _ => "application/octet-stream"
+    };
 
     public async Task DeleteAsync(string documentId)
     {
+        var doc = await _docRepo.GetByIdAsync(documentId);
         await _chunkRepo.DeleteByDocumentAsync(documentId);
         await _docRepo.DeleteAsync(documentId);
+        if (doc != null) _fileStore.Delete(doc.Id, doc.FileName);
     }
 }
