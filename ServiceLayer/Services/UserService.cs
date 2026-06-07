@@ -40,6 +40,35 @@ public class UserService : IUserService
         var user = await _repo.GetByIdAsync(id);
         if (user is null) return (false, "User không tồn tại");
         user.Role = newRole;
+        // Upload permission only applies to lecturers — clear it for other roles.
+        if (newRole != Roles.Lecturer)
+        {
+            user.CanUploadDocuments = false;
+            user.AssignedSubjectId = null;
+        }
+        await _repo.UpdateAsync(user);
+        return (true, null);
+    }
+
+    public async Task<(bool, string?)> SetUploadPermissionAsync(string id, bool canUpload, string? subjectId)
+    {
+        var user = await _repo.GetByIdAsync(id);
+        if (user is null) return (false, "User không tồn tại");
+        if (user.Role != Roles.Lecturer) return (false, "Chỉ áp dụng quyền upload cho giảng viên");
+
+        if (canUpload)
+        {
+            // Granting requires choosing exactly one subject the lecturer may upload to.
+            if (string.IsNullOrWhiteSpace(subjectId))
+                return (false, "Vui lòng chọn bộ môn (môn học) khi cấp quyền upload");
+            user.CanUploadDocuments = true;
+            user.AssignedSubjectId = subjectId;
+        }
+        else
+        {
+            user.CanUploadDocuments = false;
+            user.AssignedSubjectId = null;
+        }
         await _repo.UpdateAsync(user);
         return (true, null);
     }

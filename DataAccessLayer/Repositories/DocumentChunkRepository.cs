@@ -109,6 +109,12 @@ public class DocumentChunkRepository : IDocumentChunkRepository
         return m.Success && int.TryParse(m.Groups[1].Value, out var n) ? n : null;
     }
 
+    public async Task<List<DocumentChunk>> GetByDocumentAsync(string documentId)
+        => await _context.DocumentChunks
+            .Where(c => c.DocumentId == documentId)
+            .OrderBy(c => c.ChunkIndex)
+            .ToListAsync();
+
     public async Task DeleteByDocumentAsync(string documentId)
     {
         var chunks = await _context.DocumentChunks

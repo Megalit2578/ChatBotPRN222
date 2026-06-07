@@ -1,0 +1,159 @@
+@model ChapterIndexViewModel
+@{
+    ViewData["Title"] = "Chương";
+    var sel = Model.SelectedSubject;
+}
+
+<div class="page-shell">
+    <div class="page-head">
+        <div>
+            <h1>
+                <span class="ico"><i class="bi bi-bookmarks"></i></span>
+                Quản lý chương
+            </h1>
+            <p class="sub">
+                <span>Tổ chức tài liệu theo cấu trúc <strong>Môn học → Chương → Tài liệu</strong></span>
+            </p>
+        </div>
+        <a class="btn btn-brand" asp-controller="Document" asp-action="Index"
+           asp-route-subjectId="@sel?.Id">
+            <i class="bi bi-folder2-open me-1"></i>Sang tài liệu
+        </a>
+    </div>
+
+    @* Chọn môn học *@
+    <div class="card mb-3">
+        <div class="card-body">
+            <form method="get" class="d-flex align-items-center gap-2 flex-wrap m-0">
+                <label class="form-label small fw-semibold m-0">Môn học:</label>
+                <select name="subjectId" class="form-select form-select-sm" style="min-width:260px;" onchange="this.form.submit()">
+                    @foreach (var s in Model.Subjects)
+                    {
+                        <option value="@s.Id" selected="@(sel?.Id == s.Id)">@s.Code - @s.Name</option>
+                    }
+                </select>
+                @if (sel != null)
+                {
+                    <span class="badge bg-primary-subtle text-primary ms-1">
+                        <i class="bi bi-bookmarks me-1"></i>@Model.Chapters.Count chương
+                    </span>
+                }
+            </form>
+        </div>
+    </div>
+
+    @if (sel == null)
+    {
+        <div class="card"><div class="card-body text-center text-muted p-5">Chưa có môn học nào. Hãy tạo môn học ở mục Tài liệu trước.</div></div>
+    }
+    else
+    {
+        <div class="row g-3">
+            @if (Model.CanManage)
+            {
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header grad"><i class="bi bi-plus-circle-fill"></i> Thêm chương mới</div>
+                        <div class="card-body">
+                            <form asp-action="Create" method="post">
+                                <input type="hidden" name="subjectId" value="@sel.Id" />
+                                <div class="mb-2">
+                                    <label class="form-label small fw-semibold">Tên chương</label>
+                                    <input name="title" class="form-control" maxlength="300" required
+                                           placeholder="VD: Chương 1 - Tổng quan" />
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label small fw-semibold">Mô tả</label>
+                                    <textarea name="description" class="form-control" rows="2" placeholder="Mô tả ngắn (tuỳ chọn)"></textarea>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label small fw-semibold">Thứ tự</label>
+                                    <input name="orderIndex" type="number" class="form-control" min="0" value="0" />
+                                    <div class="form-text">Để 0 sẽ tự xếp vào cuối.</div>
+                                </div>
+                                <button class="btn btn-brand w-100"><i class="bi bi-plus-lg me-1"></i>Tạo chương</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <div class="@(Model.CanManage ? "col-lg-8" : "col-12")">
+                <div class="card">
+                    <div class="card-header justify-content-between">
+                        <span><i class="bi bi-list-ol text-primary"></i>Danh sách chương — @sel.Code</span>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (Model.Chapters.Count == 0)
+                        {
+                            <div class="text-center p-5 text-muted">
+                                <i class="bi bi-bookmark-dash" style="font-size:56px; opacity:.35; color: var(--c-primary);"></i>
+                                <p class="mt-3 mb-0">Môn này chưa có chương nào.</p>
+                                @if (Model.CanManage)
+                                {
+                                    <p class="small mt-1">Tạo chương đầu tiên ở khung bên trái.</p>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <ul class="list-group list-group-flush">
+                                @foreach (var ch in Model.Chapters)
+                                {
+                                    var docCount = Model.DocumentCounts.TryGetValue(ch.Id, out var n) ? n : 0;
+                                    <li class="list-group-item">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="me-2">
+                                                <span class="badge bg-secondary-subtle text-secondary me-1">#@ch.OrderIndex</span>
+                                                <span class="fw-bold">@ch.Title</span>
+                                                <span class="badge bg-primary-subtle text-primary ms-1" title="Số tài liệu">
+                                                    <i class="bi bi-files me-1"></i>@docCount
+                                                </span>
+                                                @if (!string.IsNullOrWhiteSpace(ch.Description))
+                                                {
+                                                    <div class="small text-muted mt-1">@ch.Description</div>
+                                                }
+                                            </div>
+                                            @if (Model.CanManage)
+                                            {
+                                                <div class="btn-group flex-shrink-0">
+                                                    <a class="btn btn-sm btn-outline-primary" asp-controller="Document" asp-action="Index"
+                                                       asp-route-subjectId="@sel.Id" asp-route-chapterId="@ch.Id" title="Xem tài liệu của chương">
+                                                        <i class="bi bi-folder2-open"></i>
+                                                    </a>
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                                                            data-bs-toggle="collapse" data-bs-target="#editCh-@ch.Id" title="Sửa">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </button>
+                                                    <form asp-action="Delete" method="post" class="m-0"
+                                                          onsubmit="return confirm('Xoá chương @ch.Title? Tài liệu trong chương sẽ được gỡ liên kết (không bị xoá).');">
+                                                        <input type="hidden" name="id" value="@ch.Id" />
+                                                        <button class="btn btn-sm btn-outline-danger" title="Xoá"><i class="bi bi-trash"></i></button>
+                                                    </form>
+                                                </div>
+                                            }
+                                        </div>
+                                        @if (Model.CanManage)
+                                        {
+                                            <div class="collapse mt-2" id="editCh-@ch.Id">
+                                                <form asp-action="Edit" method="post">
+                                                    <input type="hidden" name="id" value="@ch.Id" />
+                                                    <div class="row g-2">
+                                                        <div class="col-8"><input name="title" class="form-control form-control-sm" value="@ch.Title" required /></div>
+                                                        <div class="col-4"><input name="orderIndex" type="number" min="0" class="form-control form-control-sm" value="@ch.OrderIndex" /></div>
+                                                        <div class="col-12"><textarea name="description" class="form-control form-control-sm" rows="2">@ch.Description</textarea></div>
+                                                    </div>
+                                                    <button class="btn btn-sm btn-primary w-100 mt-2"><i class="bi bi-check-lg me-1"></i>Lưu thay đổi</button>
+                                                </form>
+                                            </div>
+                                        }
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>

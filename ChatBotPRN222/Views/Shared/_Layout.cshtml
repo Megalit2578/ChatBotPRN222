@@ -62,6 +62,11 @@
                                 <i class="bi bi-folder2-open me-1"></i>Tài liệu
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(currentController == "Chapter" ? "active" : "")" asp-controller="Chapter" asp-action="Index">
+                                <i class="bi bi-bookmarks me-1"></i>Chương
+                            </a>
+                        </li>
                         @if (!isLecturer)
                         {
                             <li class="nav-item">
@@ -75,6 +80,11 @@
                             <li class="nav-item">
                                 <a class="nav-link @(currentController == "User" ? "active" : "")" asp-controller="User" asp-action="Index">
                                     <i class="bi bi-people me-1"></i>Người dùng
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link @(currentController == "AllowedEmail" ? "active" : "")" asp-controller="AllowedEmail" asp-action="Index">
+                                    <i class="bi bi-envelope-check me-1"></i>Email cho phép
                                 </a>
                             </li>
                             <li class="nav-item">

@@ -122,11 +122,41 @@
                                         </td>
                                         <td>@u.FullName</td>
                                         <td class="small text-muted">@u.Email</td>
-                                        <td><span class="badge @badgeClass">@u.Role</span></td>
+                                        <td>
+                                            <span class="badge @badgeClass">@u.Role</span>
+                                            @if (u.Role == "Lecturer")
+                                            {
+                                                if (u.CanUploadDocuments)
+                                                {
+                                                    var assigned = Model.Subjects.FirstOrDefault(s => s.Id == u.AssignedSubjectId);
+                                                    <div class="mt-1"><span class="badge bg-success-subtle text-success border border-success-subtle"><i class="bi bi-cloud-check me-1"></i>Upload: @(assigned != null ? assigned.Code : "?")</span></div>
+                                                }
+                                                else
+                                                {
+                                                    <div class="mt-1"><span class="badge bg-secondary-subtle text-secondary border"><i class="bi bi-cloud-slash me-1"></i>Chưa cấp upload</span></div>
+                                                }
+                                            }
+                                        </td>
                                         <td class="small">@u.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")</td>
                                         <td class="text-end">
                                             <div class="btn-group btn-group-sm">
                                                 <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#roleModal-@u.Id" title="Đổi quyền"><i class="bi bi-shield"></i></button>
+                                                @if (u.Role == "Lecturer")
+                                                {
+                                                    if (u.CanUploadDocuments)
+                                                    {
+                                                        <form asp-action="SetUploadPermission" method="post" class="m-0 d-inline"
+                                                              onsubmit="return confirm('Thu hồi quyền upload của @u.Username?');">
+                                                            <input type="hidden" name="id" value="@u.Id" />
+                                                            <input type="hidden" name="canUpload" value="false" />
+                                                            <button class="btn btn-success" title="Thu hồi quyền upload tài liệu"><i class="bi bi-cloud-check"></i></button>
+                                                        </form>
+                                                    }
+                                                    else
+                                                    {
+                                                        <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#uploadModal-@u.Id" title="Cấp quyền upload tài liệu"><i class="bi bi-cloud-upload"></i></button>
+                                                    }
+                                                }
                                                 <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#pwdModal-@u.Id" title="Reset mật khẩu"><i class="bi bi-key"></i></button>
                                                 @if (!isSelf)
                                                 {
@@ -156,6 +186,34 @@
                                                     </form>
                                                 </div>
                                             </div>
+
+                                            @if (u.Role == "Lecturer" && !u.CanUploadDocuments)
+                                            {
+                                                <div class="modal fade" id="uploadModal-@u.Id" tabindex="-1">
+                                                    <div class="modal-dialog">
+                                                        <form class="modal-content" asp-action="SetUploadPermission" method="post">
+                                                            <input type="hidden" name="id" value="@u.Id" />
+                                                            <input type="hidden" name="canUpload" value="true" />
+                                                            <div class="modal-header"><h5 class="modal-title">Cấp quyền upload — @u.Username</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                                                            <div class="modal-body text-start">
+                                                                <label class="form-label small fw-semibold">Bộ môn (môn học) được phép upload</label>
+                                                                <select name="subjectId" class="form-select" required>
+                                                                    <option value="">-- Chọn bộ môn --</option>
+                                                                    @foreach (var s in Model.Subjects)
+                                                                    {
+                                                                        <option value="@s.Id">@s.Code - @s.Name</option>
+                                                                    }
+                                                                </select>
+                                                                <div class="form-text">Giảng viên chỉ được upload tài liệu cho đúng bộ môn này.</div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">Huỷ</button>
+                                                                <button class="btn btn-brand"><i class="bi bi-cloud-upload me-1"></i>Cấp quyền</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            }
 
                                             <div class="modal fade" id="pwdModal-@u.Id" tabindex="-1">
                                                 <div class="modal-dialog">

@@ -5,6 +5,11 @@
     <ProjectReference Include="..\DataAccessLayer\DataAccessLayer.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Tài liệu mẫu để seed/index lần chạy đầu — copy sang thư mục output khi build/publish. -->
+    <Content Include="SeedData\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>

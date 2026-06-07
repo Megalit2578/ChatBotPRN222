@@ -13,6 +13,13 @@ public class DocumentRepository : IDocumentRepository
         => _context.Documents.Where(d => d.SubjectId == subjectId)
             .OrderByDescending(d => d.UploadedAt).ToListAsync();
 
+    public Task<List<Document>> GetByChapterAsync(string chapterId)
+        => _context.Documents.Where(d => d.ChapterId == chapterId)
+            .OrderByDescending(d => d.UploadedAt).ToListAsync();
+
+    public async Task<int> CountByChapterAsync(string chapterId)
+        => await _context.Documents.CountAsync(d => d.ChapterId == chapterId);
+
     public Task<List<Document>> GetAllAsync()
         => _context.Documents.OrderByDescending(d => d.UploadedAt).ToListAsync();
 
@@ -55,6 +62,12 @@ public class DocumentRepository : IDocumentRepository
     public async Task CreateAsync(Document document)
     {
         _context.Documents.Add(document);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task UpdateAsync(Document document)
+    {
+        _context.Documents.Update(document);
         await _context.SaveChangesAsync();
     }
 

@@ -30,7 +30,10 @@ public class SubjectService : ISubjectService
     public async Task EnsureSeedAsync()
     {
         if (await _repo.CountAsync() > 0) return;
+        // Seed đủ các môn mà bộ tài liệu mẫu + test set 50 câu tham chiếu tới.
         await _repo.CreateAsync(new Subject { Code = "PRN222", Name = "Advanced Cross Platform Application Programming", Description = "Môn học ASP.NET Core MVC tại FPT University." });
         await _repo.CreateAsync(new Subject { Code = "DBI202", Name = "Introduction to Databases", Description = "Cơ sở dữ liệu quan hệ và SQL." });
+        await _repo.CreateAsync(new Subject { Code = "SWE301", Name = "Software Testing", Description = "Các phương pháp và quy trình kiểm thử phần mềm." });
+        await _repo.CreateAsync(new Subject { Code = "OSG202", Name = "Operating Systems", Description = "Nguyên lý hệ điều hành: tiến trình, luồng và bộ nhớ." });
     }
 }

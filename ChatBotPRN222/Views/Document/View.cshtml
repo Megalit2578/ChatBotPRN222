@@ -1,0 +1,223 @@
+@model DocumentViewModel
+@{
+    ViewData["Title"] = string.IsNullOrWhiteSpace(Model.Document.Title) ? Model.Document.FileName : Model.Document.Title;
+    var openUrl = Url.Action("Open", new { id = Model.Document.Id });
+    var downloadUrl = Url.Action("Open", new { id = Model.Document.Id, download = true });
+    var totalChars = Model.Chunks.Sum(c => (c.Content ?? "").Length);
+
+    var isAdmin = User.IsInRole("Admin");
+    var canUpload = isAdmin || User.HasClaim("CanUpload", "true");
+
+    var ext = System.IO.Path.GetExtension(Model.Document.FileName).ToLowerInvariant().TrimStart('.');
+    var (fileIcon, fileIconColor) = ext switch
+    {
+        "pdf" => ("bi-file-earmark-pdf-fill", "text-danger"),
+        "docx" => ("bi-file-earmark-word-fill", "text-primary"),
+        "pptx" => ("bi-file-earmark-ppt-fill", "text-warning"),
+        _ => ("bi-file-earmark-text-fill", "text-secondary")
+    };
+    var (statusCls, statusIcon, statusText) = Model.Document.Status switch
+    {
+        "Indexed" => ("success", "check-circle-fill", "Đã Index"),
+        "Processing" => ("info", "arrow-repeat", "Đang xử lý"),
+        "Pending" => ("secondary", "hourglass-split", "Chờ xử lý"),
+        "Failed" => ("danger", "x-circle-fill", "Thất bại"),
+        "Empty" => ("warning", "exclamation-circle-fill", "Trống"),
+        _ => ("secondary", "clock", Model.Document.Status)
+    };
+}
+
+<div class="page-shell">
+    <div class="page-head">
+        <div>
+            <h1>
+                <span class="ico"><i class="bi bi-diagram-3"></i></span>
+                @ViewData["Title"]
+            </h1>
+            <p class="sub">
+                <span class="badge bg-light text-dark me-1">@Model.SubjectCode</span>
+                @if (!string.IsNullOrWhiteSpace(Model.ChapterTitle))
+                {
+                    <span class="badge bg-light text-dark border me-1"><i class="bi bi-bookmark me-1"></i>@Model.ChapterTitle</span>
+                }
+                @Model.Document.FileName · @ViewFormat.FileSize(Model.Document.FileSize)
+                · <strong>@Model.Chunks.Count</strong> chunk · @($"{totalChars:N0}") ký tự đã index
+            </p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <a class="btn btn-outline-secondary" asp-action="Index"><i class="bi bi-arrow-left me-1"></i>Quay lại</a>
+            @if (canUpload)
+            {
+                <form asp-action="ReChunk" method="post" class="m-0"
+                      onsubmit="return confirm('Chunk lại tài liệu này? Toàn bộ chunk hiện tại sẽ được thay bằng kết quả mới.');">
+                    <input type="hidden" name="id" value="@Model.Document.Id" />
+                    <button class="btn btn-outline-primary" type="submit"><i class="bi bi-arrow-repeat me-1"></i>Chunk lại</button>
+                </form>
+            }
+            @if (Model.FileExists)
+            {
+                <a class="btn btn-outline-primary" href="@openUrl" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right me-1"></i>Mở bản gốc</a>
+                <a class="btn btn-brand" href="@downloadUrl"><i class="bi bi-download me-1"></i>Tải về</a>
+            }
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Thông tin tài liệu -->
+        <div class="col-lg-4">
+            <div class="card-custom">
+                <div class="card-custom-header">
+                    <h5 class="m-0"><i class="bi bi-info-circle me-2"></i>Thông tin tài liệu</h5>
+                </div>
+                <div class="card-custom-body">
+                    <div class="doc-detail-icon text-center mb-4">
+                        <i class="bi @fileIcon @fileIconColor" style="font-size: 3.5rem;"></i>
+                        <div class="mt-2">
+                            <span class="badge bg-secondary">@ext.ToUpper()</span>
+                        </div>
+                    </div>
+
+                    <dl class="doc-detail-list mb-0">
+                        <dt><i class="bi bi-tag me-1"></i>Tiêu đề</dt>
+                        <dd>@(string.IsNullOrWhiteSpace(Model.Document.Title) ? Model.Document.FileName : Model.Document.Title)</dd>
+
+                        <dt><i class="bi bi-journal-bookmark me-1"></i>Môn học</dt>
+                        <dd>@Model.SubjectCode</dd>
+
+                        <dt><i class="bi bi-file-earmark me-1"></i>Tên tệp</dt>
+                        <dd class="text-break">@Model.Document.FileName</dd>
+
+                        <dt><i class="bi bi-hdd me-1"></i>Kích thước</dt>
+                        <dd>@ViewFormat.FileSize(Model.Document.FileSize)</dd>
+
+                        <dt><i class="bi bi-layers me-1"></i>Số chunk</dt>
+                        <dd>@Model.Document.ChunkCount</dd>
+
+                        <dt><i class="bi bi-calendar me-1"></i>Ngày upload</dt>
+                        <dd>@Model.Document.UploadedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
+
+                        <dt><i class="bi bi-activity me-1"></i>Trạng thái</dt>
+                        <dd>
+                            <span class="badge bg-@statusCls rounded-pill px-3 py-2">
+                                <i class="bi bi-@statusIcon me-1"></i>@statusText
+                            </span>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <!-- Document Chunks -->
+        <div class="col-lg-8">
+            <div class="alert alert-info d-flex align-items-start small">
+                <i class="bi bi-info-circle me-2 mt-1"></i>
+                <div>
+                    Đây là cách hệ thống <strong>cắt tài liệu thành các đoạn (chunk)</strong> để AI tìm kiếm và trả lời.
+                    Khi bạn hỏi, bot tìm các chunk liên quan nhất rồi trả lời dựa trên đó.
+                    Muốn xem bản gốc, bấm <strong>Mở bản gốc</strong> hoặc <strong>Tải về</strong>.
+                </div>
+            </div>
+
+            <div class="card-custom">
+                <div class="card-custom-header d-flex align-items-center justify-content-between">
+                    <h5 class="m-0">
+                        <i class="bi bi-layers-fill me-2"></i>Document Chunks
+                        <span class="badge bg-primary ms-2">@Model.Chunks.Count</span>
+                    </h5>
+                    <span class="text-muted small">Nội dung tách để phục vụ AI/RAG</span>
+                </div>
+                <div class="card-custom-body" style="max-height: 70vh; overflow-y: auto;">
+                    @if (!Model.Chunks.Any())
+                    {
+                        <div class="empty-state py-5 text-center text-muted">
+                            <i class="bi bi-layers" style="font-size:3rem; opacity:.4; display:block; margin-bottom:1rem;"></i>
+                            <p>Chưa có chunks nào được tạo (không trích xuất được nội dung text).</p>
+                            @if (Model.FileExists)
+                            {
+                                <a class="btn btn-brand mt-2" href="@downloadUrl"><i class="bi bi-download me-1"></i>Tải về để xem bản gốc</a>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var chunk in Model.Chunks)
+                        {
+                            <div class="chunk-item">
+                                <div class="chunk-header">
+                                    <div class="chunk-meta">
+                                        <span class="chunk-index">#@(chunk.ChunkIndex + 1)</span>
+                                        <span class="chunk-page">
+                                            <i class="bi bi-file-text me-1"></i>Trang @chunk.Page
+                                        </span>
+                                    </div>
+                                    <div class="chunk-badges">
+                                        <span class="badge bg-secondary-subtle text-secondary">
+                                            @((chunk.Content ?? "").Length) ký tự
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="chunk-content">@chunk.Content</div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Chunk view — theo style của Assignment_1 (.chunk-item) */
+    .card-custom {
+        background: #fff;
+        border: 1px solid var(--c-border, #e5e7eb);
+        border-radius: var(--r-lg, .9rem);
+        overflow: hidden;
+        box-shadow: var(--sh-sm);
+    }
+    .card-custom-header {
+        padding: .9rem 1.1rem;
+        border-bottom: 1px solid var(--c-border, #e5e7eb);
+        background: var(--c-surface-2, #f8fafc);
+    }
+    .card-custom-header h5 { font-size: 1rem; font-weight: 700; color: var(--c-ink-2, #1e2547); }
+    .card-custom-body { padding: 1.1rem; }
+
+    .doc-detail-icon { padding: 1rem 0; }
+    .doc-detail-list dt {
+        font-size: .72rem; text-transform: uppercase; letter-spacing: .05em;
+        color: var(--c-muted, #5b6585); font-weight: 700; margin-top: .9rem;
+    }
+    .doc-detail-list dt:first-child { margin-top: 0; }
+    .doc-detail-list dd { margin: .15rem 0 0; font-size: .9rem; color: var(--c-ink-2, #1e2547); font-weight: 500; }
+
+    .chunk-item {
+        border: 1px solid var(--c-border, #e5e7eb);
+        border-radius: .6rem;
+        margin-bottom: .75rem;
+        overflow: hidden;
+        transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    .chunk-item:hover { border-color: var(--c-primary, #6366f1); box-shadow: var(--sh-glow, 0 0 0 3px rgba(99,102,241,.12)); }
+    .chunk-item:last-child { margin-bottom: 0; }
+
+    .chunk-header {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: .6rem .9rem;
+        background: var(--c-surface-2, #f3f6fb);
+        border-bottom: 1px solid var(--c-border, #e5e7eb);
+    }
+    .chunk-meta { display: flex; align-items: center; gap: .75rem; }
+    .chunk-index {
+        font-size: .72rem; font-weight: 700; color: #fff;
+        background: var(--c-primary, #6366f1);
+        padding: 2px 9px; border-radius: 20px;
+    }
+    .chunk-page { font-size: .75rem; color: var(--c-muted, #6b7280); }
+    .chunk-badges { display: flex; gap: .4rem; align-items: center; }
+    .chunk-content {
+        padding: .8rem .9rem;
+        font-size: .85rem; line-height: 1.7; color: var(--c-ink-2, #374151);
+        white-space: pre-wrap; word-wrap: break-word;
+    }
+</style>

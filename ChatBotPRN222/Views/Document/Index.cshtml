@@ -3,7 +3,13 @@
     ViewData["Title"] = "Tài liệu";
     var isAdmin = User.IsInRole("Admin");
     var isLecturer = User.IsInRole("Lecturer");
-    var canUpload = isAdmin || isLecturer;
+    // Admins always; lecturers only when an admin has granted the upload permission.
+    var canUpload = isAdmin || User.HasClaim("CanUpload", "true");
+    // Lecturers are restricted to a single assigned subject; admins may upload to any.
+    var uploadSubjectId = User.FindFirst("UploadSubjectId")?.Value;
+    var uploadSubjects = isAdmin
+        ? Model.Subjects
+        : Model.Subjects.Where(s => s.Id == uploadSubjectId).ToList();
 }
 
 <div class="page-shell">
@@ -20,7 +26,7 @@
                 }
                 else
                 {
-                    <span>Bạn đang xem chế độ chỉ đọc — chỉ Lecturer và Admin được upload tài liệu</span>
+                    <span>Bạn đang xem chế độ chỉ đọc — chỉ Admin và giảng viên được Admin cấp quyền mới upload được tài liệu</span>
                 }
             </p>
         </div>
@@ -41,13 +47,31 @@
                         <form asp-action="Upload" method="post" enctype="multipart/form-data">
                             <div class="mb-3">
                                 <label class="form-label small fw-semibold">Môn học</label>
-                                <select name="subjectId" class="form-select" required>
-                                    <option value="">-- Chọn môn --</option>
-                                    @foreach (var s in Model.Subjects)
+                                <select name="subjectId" id="uploadSubject" class="form-select" required>
+                                    @if (isAdmin)
+                                    {
+                                        <option value="">-- Chọn môn --</option>
+                                    }
+                                    @foreach (var s in uploadSubjects)
                                     {
                                         <option value="@s.Id" selected="@(Model.SelectedSubjectId == s.Id)">@s.Code - @s.Name</option>
                                     }
                                 </select>
+                                @if (!isAdmin)
+                                {
+                                    <div class="form-text">Bạn được cấp quyền upload cho bộ môn này.</div>
+                                }
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold">Chương <span class="text-muted fw-normal">(tuỳ chọn)</span></label>
+                                <select name="chapterId" id="uploadChapter" class="form-select">
+                                    <option value="">— Không gán chương —</option>
+                                    @foreach (var ch in Model.Chapters)
+                                    {
+                                        <option value="@ch.Id" data-subject="@ch.SubjectId" selected="@(Model.SelectedChapterId == ch.Id)">@ch.Title</option>
+                                    }
+                                </select>
+                                <div class="form-text">Gán tài liệu vào một chương của môn. Tạo chương ở mục <a asp-controller="Chapter" asp-action="Index">Chương</a>.</div>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label small fw-semibold">Tiêu đề tài liệu</label>
@@ -147,8 +171,23 @@
                                 <option value="@s.Id" selected="@(Model.SelectedSubjectId == s.Id)">@s.Code - @s.Name</option>
                             }
                         </select>
+                        @{
+                            var filterChapters = string.IsNullOrWhiteSpace(Model.SelectedSubjectId)
+                                ? Model.Chapters
+                                : Model.Chapters.Where(c => c.SubjectId == Model.SelectedSubjectId).ToList();
+                        }
+                        @if (filterChapters.Count > 0)
+                        {
+                            <select name="chapterId" class="form-select form-select-sm" onchange="this.form.submit()" style="min-width:160px;">
+                                <option value="">Tất cả chương</option>
+                                @foreach (var ch in filterChapters)
+                                {
+                                    <option value="@ch.Id" selected="@(Model.SelectedChapterId == ch.Id)">@ch.Title</option>
+                                }
+                            </select>
+                        }
                         <button class="btn btn-sm btn-brand" type="submit"><i class="bi bi-search me-1"></i>Tìm</button>
-                        @if (!string.IsNullOrWhiteSpace(Model.SearchQuery) || !string.IsNullOrWhiteSpace(Model.SelectedSubjectId))
+                        @if (!string.IsNullOrWhiteSpace(Model.SearchQuery) || !string.IsNullOrWhiteSpace(Model.SelectedSubjectId) || !string.IsNullOrWhiteSpace(Model.SelectedChapterId))
                         {
                             <a class="btn btn-sm btn-outline-secondary" asp-action="Index" title="Xoá bộ lọc"><i class="bi bi-x-lg"></i></a>
                         }
@@ -173,10 +212,12 @@
                                 <thead>
                                     <tr>
                                         <th>Tiêu đề / Tệp</th>
-                                        <th>Môn</th>
-                                        <th class="text-end">Kích thước</th>
-                                        <th class="text-end">Chunks</th>
-                                        <th>Upload lúc</th>
+                                        <th class="text-center">Môn</th>
+                                        <th class="text-center">Chương</th>
+                                        <th class="text-center">Kích thước</th>
+                                        <th class="text-center">Chunks</th>
+                                        <th class="text-center">Trạng thái</th>
+                                        <th class="text-center">Upload lúc</th>
                                         <th class="text-end">Thao tác</th>
                                     </tr>
                                 </thead>
@@ -184,6 +225,8 @@
                                     @foreach (var d in Model.Documents)
                                     {
                                         var subject = Model.Subjects.FirstOrDefault(s => s.Id == d.SubjectId);
+                                        var chapter = Model.Chapters.FirstOrDefault(c => c.Id == d.ChapterId);
+                                        var status = ViewFormat.StatusBadge(d.Status);
                                         var ext = System.IO.Path.GetExtension(d.FileName).ToLowerInvariant();
                                         var (iconClass, fileType) = ext switch
                                         {
@@ -195,8 +238,8 @@
                                         <tr class="doc-row">
                                             <td>
                                                 <span class="file-icon @iconClass"><i class="bi @fileType"></i></span>
-                                                <a asp-action="Open" asp-route-id="@d.Id" target="_blank" rel="noopener"
-                                                   class="fw-bold text-decoration-none" title="Mở tài liệu trong tab mới">
+                                                <a asp-action="View" asp-route-id="@d.Id"
+                                                   class="fw-bold text-decoration-none" title="Xem tài liệu">
                                                     @(string.IsNullOrWhiteSpace(d.Title) ? d.FileName : d.Title)
                                                 </a>
                                                 @if (!string.IsNullOrWhiteSpace(d.Title))
@@ -204,14 +247,25 @@
                                                     <div class="small text-muted ms-4 ps-1">@d.FileName</div>
                                                 }
                                             </td>
-                                            <td><span class="badge bg-light">@(subject?.Code ?? "?")</span></td>
-                                            <td class="text-end small">@($"{d.FileSize / 1024.0 / 1024.0:F2} MB")</td>
-                                            <td class="text-end"><span class="badge bg-primary-subtle">@d.ChunkCount</span></td>
-                                            <td class="small text-muted">@d.UploadedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                                            <td class="text-center"><span class="badge bg-light text-dark border" title="@subject?.Name">@(subject?.Code ?? "?")</span></td>
+                                            <td class="text-center small">
+                                                @if (chapter != null)
+                                                {
+                                                    <span class="badge bg-light text-dark border" title="@chapter.Title"><i class="bi bi-bookmark me-1"></i>@chapter.Title</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">—</span>
+                                                }
+                                            </td>
+                                            <td class="text-center small text-muted">@ViewFormat.FileSize(d.FileSize)</td>
+                                            <td class="text-center"><span class="badge bg-primary-subtle text-primary"><i class="bi bi-layers me-1"></i>@d.ChunkCount</span></td>
+                                            <td class="text-center"><span class="badge @status.Css"><i class="bi @status.Icon me-1"></i>@status.Label</span></td>
+                                            <td class="text-center small text-muted">@d.UploadedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
                                             <td class="text-end">
                                                 <div class="btn-group">
-                                                    <a asp-action="Open" asp-route-id="@d.Id" target="_blank" rel="noopener"
-                                                       class="btn btn-sm btn-outline-primary" title="Mở tài liệu">
+                                                    <a asp-action="View" asp-route-id="@d.Id"
+                                                       class="btn btn-sm btn-outline-primary" title="Xem tài liệu">
                                                         <i class="bi bi-eye"></i>
                                                     </a>
                                                     <a asp-action="Open" asp-route-id="@d.Id" asp-route-download="true"
@@ -248,3 +302,25 @@
         border: 1px solid var(--c-border);
     }
 </style>
+
+@section Scripts {
+    <script>
+        // Trong form upload: chỉ hiện các chương thuộc đúng môn học đang chọn.
+        (function () {
+            var subj = document.getElementById('uploadSubject');
+            var chap = document.getElementById('uploadChapter');
+            if (!subj || !chap) return;
+            function sync() {
+                var sid = subj.value;
+                Array.prototype.forEach.call(chap.options, function (o) {
+                    if (!o.value) { o.hidden = false; return; } // giữ tuỳ chọn "Không gán chương"
+                    o.hidden = o.getAttribute('data-subject') !== sid;
+                });
+                var cur = chap.selectedOptions[0];
+                if (cur && cur.value && cur.getAttribute('data-subject') !== sid) chap.value = '';
+            }
+            subj.addEventListener('change', sync);
+            sync();
+        })();
+    </script>
+}

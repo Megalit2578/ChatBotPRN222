@@ -8,6 +8,10 @@ public class User
     public string PasswordHash { get; set; } = string.Empty;
     public string FullName { get; set; } = string.Empty;
     public string Role { get; set; } = "Student";
+    // Lecturers may only upload documents once an admin grants this. Admins can always upload.
+    public bool CanUploadDocuments { get; set; }
+    // The single subject a granted lecturer is allowed to upload documents to.
+    public string? AssignedSubjectId { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public string? AvatarPath { get; set; }
     public string? Bio { get; set; }

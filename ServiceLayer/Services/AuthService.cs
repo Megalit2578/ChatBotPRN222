@@ -7,7 +7,14 @@ namespace ServiceLayer.Services;
 public class AuthService : IAuthService
 {
     private readonly IUserRepository _userRepo;
-    public AuthService(IUserRepository userRepo) => _userRepo = userRepo;
+    private readonly IAllowedEmailService _allowedEmails;
+    public AuthService(IUserRepository userRepo, IAllowedEmailService allowedEmails)
+    {
+        _userRepo = userRepo;
+        _allowedEmails = allowedEmails;
+    }
+
+    public Task<bool> IsEmailAllowedAsync(string email) => _allowedEmails.IsAllowedAsync(email);
 
     public async Task<LoginResult> LoginAsync(string username, string password)
     {
@@ -21,8 +28,11 @@ public class AuthService : IAuthService
         if (!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
             return new LoginResult(false, "Sai mật khẩu", null, null, null, null, null);
 
-        return new LoginResult(true, null, user.Id, user.Username, user.FullName, user.Role, user.AvatarPath);
+        return new LoginResult(true, null, user.Id, user.Username, user.FullName, user.Role, user.AvatarPath, user.CanUploadDocuments, user.AssignedSubjectId);
     }
+
+    public async Task<bool> UsernameExistsAsync(string username)
+        => await _userRepo.GetByUsernameAsync(username.Trim()) is not null;
 
     public async Task<RegisterResult> RegisterAsync(string username, string email, string password, string fullName)
     {
@@ -30,6 +40,10 @@ public class AuthService : IAuthService
             return new RegisterResult(false, "Username và password bắt buộc");
         if (password.Length < 6)
             return new RegisterResult(false, "Mật khẩu phải ít nhất 6 ký tự");
+
+        // Whitelist: nếu admin đã bật danh sách email cho phép, email phải nằm trong đó.
+        if (!await _allowedEmails.IsAllowedAsync(email ?? string.Empty))
+            return new RegisterResult(false, "Email của bạn chưa được cho phép đăng ký. Vui lòng liên hệ quản trị viên.");
 
         var existing = await _userRepo.GetByUsernameAsync(username.Trim());
         if (existing is not null)

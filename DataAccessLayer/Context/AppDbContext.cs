@@ -10,8 +10,10 @@ public class AppDbContext : DbContext
 
     public DbSet<User> Users => Set<User>();
     public DbSet<Subject> Subjects => Set<Subject>();
+    public DbSet<Chapter> Chapters => Set<Chapter>();
     public DbSet<Document> Documents => Set<Document>();
     public DbSet<DocumentChunk> DocumentChunks => Set<DocumentChunk>();
+    public DbSet<AllowedEmail> AllowedEmails => Set<AllowedEmail>();
     public DbSet<ChatSession> ChatSessions => Set<ChatSession>();
     public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
     public DbSet<Feedback> Feedbacks => Set<Feedback>();
@@ -29,6 +31,7 @@ public class AppDbContext : DbContext
             e.Property(u => u.FullName).HasMaxLength(200);
             e.Property(u => u.Role).HasMaxLength(50).HasDefaultValue("Student");
             e.Property(u => u.AvatarPath).HasMaxLength(500);
+            e.Property(u => u.AssignedSubjectId).HasMaxLength(36);
         });
 
         modelBuilder.Entity<Subject>(e =>
@@ -39,18 +42,30 @@ public class AppDbContext : DbContext
             e.Property(s => s.Name).HasMaxLength(200);
         });
 
+        modelBuilder.Entity<Chapter>(e =>
+        {
+            e.HasKey(c => c.Id);
+            e.Property(c => c.Id).HasMaxLength(36);
+            e.Property(c => c.SubjectId).HasMaxLength(36);
+            e.Property(c => c.Title).HasMaxLength(300).HasDefaultValue("");
+            e.Property(c => c.Description).HasColumnType("nvarchar(max)");
+            e.HasIndex(c => c.SubjectId);
+        });
+
         modelBuilder.Entity<Document>(e =>
         {
             e.HasKey(d => d.Id);
             e.Property(d => d.Id).HasMaxLength(36);
             e.Property(d => d.Title).HasMaxLength(500).HasDefaultValue("");
             e.Property(d => d.SubjectId).HasMaxLength(36);
+            e.Property(d => d.ChapterId).HasMaxLength(36);
             e.Property(d => d.UploadedBy).HasMaxLength(36);
             e.Property(d => d.FileName).HasMaxLength(500);
             e.Property(d => d.ContentType).HasMaxLength(100);
             e.Property(d => d.ContentHash).HasMaxLength(64).HasDefaultValue("");
             e.Property(d => d.Status).HasMaxLength(20).HasDefaultValue("Indexed");
             e.HasIndex(d => d.SubjectId);
+            e.HasIndex(d => d.ChapterId);
         });
 
         modelBuilder.Entity<DocumentChunk>(e =>
@@ -115,6 +130,16 @@ public class AppDbContext : DbContext
             e.Property(r => r.UserAvatar).HasMaxLength(500);
             e.Property(r => r.Content).HasColumnType("nvarchar(max)");
             e.HasIndex(r => r.FeedbackId);
+        });
+
+        modelBuilder.Entity<AllowedEmail>(e =>
+        {
+            e.HasKey(a => a.Id);
+            e.Property(a => a.Id).HasMaxLength(36);
+            e.Property(a => a.Email).HasMaxLength(200);
+            e.Property(a => a.Note).HasMaxLength(300).HasDefaultValue("");
+            e.Property(a => a.AddedBy).HasMaxLength(200).HasDefaultValue("");
+            e.HasIndex(a => a.Email).IsUnique();
         });
     }
 }

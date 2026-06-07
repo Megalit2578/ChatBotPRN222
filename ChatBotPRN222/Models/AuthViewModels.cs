@@ -42,3 +42,25 @@ public class RegisterViewModel
     [Compare(nameof(Password), ErrorMessage = "Mật khẩu không khớp")]
     public string ConfirmPassword { get; set; } = string.Empty;
 }
+
+public class VerifyOtpViewModel
+{
+    [Required(ErrorMessage = "Vui lòng nhập mã OTP")]
+    [RegularExpression(@"^\d{6}$", ErrorMessage = "Mã OTP gồm 6 chữ số")]
+    [Display(Name = "Mã OTP")]
+    public string Code { get; set; } = string.Empty;
+
+    public string Email { get; set; } = string.Empty;
+}
+
+// Stored in session between registration and OTP verification (no DB write until verified).
+public class PendingRegistration
+{
+    public string Username { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string FullName { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
+    public string Otp { get; set; } = string.Empty;
+    public long ExpiresAtTicks { get; set; }
+    public int Attempts { get; set; }
+}
