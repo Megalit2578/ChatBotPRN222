@@ -34,3 +34,7 @@ node_modules/
 # App settings (contain secrets)
 appsettings.json
 appsettings.Development.json
+
+# Local tooling / logs
+.claude/
+run.log

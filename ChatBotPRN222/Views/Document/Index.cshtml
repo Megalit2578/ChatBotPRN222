@@ -38,7 +38,7 @@
     <div class="row g-3">
         @if (canUpload)
         {
-            <div class="col-lg-4">
+            <div class="col-lg-4 col-xxl-3">
                 <div class="card">
                     <div class="card-header grad">
                         <i class="bi bi-cloud-upload-fill"></i> Upload tài liệu
@@ -66,10 +66,6 @@
                                 <label class="form-label small fw-semibold">Chương <span class="text-muted fw-normal">(tuỳ chọn)</span></label>
                                 <select name="chapterId" id="uploadChapter" class="form-select">
                                     <option value="">— Không gán chương —</option>
-                                    @foreach (var ch in Model.Chapters)
-                                    {
-                                        <option value="@ch.Id" data-subject="@ch.SubjectId" selected="@(Model.SelectedChapterId == ch.Id)">@ch.Title</option>
-                                    }
                                 </select>
                                 <div class="form-text">Gán tài liệu vào một chương của môn. Tạo chương ở mục <a asp-controller="Chapter" asp-action="Index">Chương</a>.</div>
                             </div>
@@ -154,7 +150,7 @@
             </div>
         }
 
-        <div class="@(canUpload ? "col-lg-8" : "col-12")">
+        <div class="@(canUpload ? "col-lg-8 col-xxl-9" : "col-12")">
             <div class="card">
                 <div class="card-header justify-content-between">
                     <span><i class="bi bi-files text-primary"></i>Danh sách tài liệu <span class="badge bg-primary-subtle ms-1">@Model.Documents.Count</span></span>
@@ -208,7 +204,7 @@
                     else
                     {
                         <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0">
+                            <table class="table table-hover align-middle mb-0 doc-table">
                                 <thead>
                                     <tr>
                                         <th>Tiêu đề / Tệp</th>
@@ -236,16 +232,21 @@
                                             _ => ("txt", "bi-file-earmark-text-fill")
                                         };
                                         <tr class="doc-row">
-                                            <td>
-                                                <span class="file-icon @iconClass"><i class="bi @fileType"></i></span>
-                                                <a asp-action="View" asp-route-id="@d.Id"
-                                                   class="fw-bold text-decoration-none" title="Xem tài liệu">
-                                                    @(string.IsNullOrWhiteSpace(d.Title) ? d.FileName : d.Title)
-                                                </a>
-                                                @if (!string.IsNullOrWhiteSpace(d.Title))
-                                                {
-                                                    <div class="small text-muted ms-4 ps-1">@d.FileName</div>
-                                                }
+                                            <td class="doc-title-cell">
+                                                <div class="d-flex align-items-center">
+                                                    <span class="file-icon @iconClass"><i class="bi @fileType"></i></span>
+                                                    <div class="doc-title-text">
+                                                        <a asp-action="View" asp-route-id="@d.Id"
+                                                           class="fw-bold text-decoration-none doc-title-link"
+                                                           title="@(string.IsNullOrWhiteSpace(d.Title) ? d.FileName : d.Title)">
+                                                            @(string.IsNullOrWhiteSpace(d.Title) ? d.FileName : d.Title)
+                                                        </a>
+                                                        @if (!string.IsNullOrWhiteSpace(d.Title))
+                                                        {
+                                                            <div class="small text-muted doc-file-sub" title="@d.FileName">@d.FileName</div>
+                                                        }
+                                                    </div>
+                                                </div>
                                             </td>
                                             <td class="text-center"><span class="badge bg-light text-dark border" title="@subject?.Name">@(subject?.Code ?? "?")</span></td>
                                             <td class="text-center small">
@@ -261,7 +262,10 @@
                                             <td class="text-center small text-muted">@ViewFormat.FileSize(d.FileSize)</td>
                                             <td class="text-center"><span class="badge bg-primary-subtle text-primary"><i class="bi bi-layers me-1"></i>@d.ChunkCount</span></td>
                                             <td class="text-center"><span class="badge @status.Css"><i class="bi @status.Icon me-1"></i>@status.Label</span></td>
-                                            <td class="text-center small text-muted">@d.UploadedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                                            <td class="text-center doc-date">
+                                                <div class="d">@d.UploadedAt.ToLocalTime().ToString("dd/MM/yyyy")</div>
+                                                <div class="t">@d.UploadedAt.ToLocalTime().ToString("HH:mm")</div>
+                                            </td>
                                             <td class="text-end">
                                                 <div class="btn-group">
                                                     <a asp-action="View" asp-route-id="@d.Id"
@@ -305,22 +309,42 @@
 
 @section Scripts {
     <script>
-        // Trong form upload: chỉ hiện các chương thuộc đúng môn học đang chọn.
+        // Trong form upload: build lại danh sách chương theo đúng môn học đang chọn.
+        // Build động (thay vì ẩn <option hidden>) để chắc chắn hoạt động trên mọi trình duyệt.
         (function () {
             var subj = document.getElementById('uploadSubject');
             var chap = document.getElementById('uploadChapter');
             if (!subj || !chap) return;
-            function sync() {
+
+            var allChapters = @Json.Serialize(Model.Chapters.Select(c => new { id = c.Id, subjectId = c.SubjectId, title = c.Title }));
+            var preselect = '@Model.SelectedChapterId';
+
+            function rebuild() {
                 var sid = subj.value;
-                Array.prototype.forEach.call(chap.options, function (o) {
-                    if (!o.value) { o.hidden = false; return; } // giữ tuỳ chọn "Không gán chương"
-                    o.hidden = o.getAttribute('data-subject') !== sid;
+                var prev = chap.value;
+                var matched = allChapters.filter(function (c) { return c.subjectId === sid; });
+
+                chap.innerHTML = '';
+                var none = document.createElement('option');
+                none.value = '';
+                none.textContent = sid
+                    ? (matched.length ? '— Không gán chương —' : '— Môn này chưa có chương —')
+                    : '— Chọn môn học trước —';
+                chap.appendChild(none);
+
+                matched.forEach(function (c) {
+                    var o = document.createElement('option');
+                    o.value = c.id;
+                    o.textContent = c.title;
+                    chap.appendChild(o);
                 });
-                var cur = chap.selectedOptions[0];
-                if (cur && cur.value && cur.getAttribute('data-subject') !== sid) chap.value = '';
+
+                if (prev && matched.some(function (c) { return c.id === prev; })) chap.value = prev;
+                else if (preselect && matched.some(function (c) { return c.id === preselect; })) chap.value = preselect;
             }
-            subj.addEventListener('change', sync);
-            sync();
+
+            subj.addEventListener('change', rebuild);
+            rebuild();
         })();
     </script>
 }
