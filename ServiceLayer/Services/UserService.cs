@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using DataAccessLayer.Constants;
 using DataAccessLayer.Entities;
 using DataAccessLayer.Repositories;
@@ -6,31 +7,65 @@ namespace ServiceLayer.Services;
 
 public class UserService : IUserService
 {
+    private static readonly Regex EmailRegex =
+        new(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.Compiled);
+
     private readonly IUserRepository _repo;
-    public UserService(IUserRepository repo) => _repo = repo;
+    private readonly IAllowedEmailService _allowedEmails;
+    public UserService(IUserRepository repo, IAllowedEmailService allowedEmails)
+    {
+        _repo = repo;
+        _allowedEmails = allowedEmails;
+    }
 
     public Task<List<User>> GetAllAsync() => _repo.GetAllAsync();
     public Task<User?> GetByIdAsync(string id) => _repo.GetByIdAsync(id);
 
-    public async Task<(bool, string?)> CreateAsync(string username, string email, string fullName, string password, string role)
+    public async Task<(bool, string?, string?)> CreateAsync(string username, string email, string fullName, string password, string role)
     {
         if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
-            return (false, "Username và mật khẩu bắt buộc");
+            return (false, "Username và mật khẩu bắt buộc", null);
         if (password.Length < 6)
-            return (false, "Mật khẩu tối thiểu 6 ký tự");
+            return (false, "Mật khẩu tối thiểu 6 ký tự", null);
+        // Email bắt buộc & hợp lệ — hệ thống cần gửi thông tin đăng nhập + link kích hoạt cho người dùng.
+        email = email?.Trim() ?? string.Empty;
+        if (!EmailRegex.IsMatch(email))
+            return (false, "Email không hợp lệ (bắt buộc để gửi thông tin tài khoản)", null);
+        // Admin chỉ được tạo tài khoản cho email nằm trong whitelist (whitelist trống = cho phép mọi email).
+        if (!await _allowedEmails.IsAllowedAsync(email))
+            return (false, "Email này không nằm trong whitelist. Hãy thêm email vào danh sách cho phép trước khi tạo tài khoản.", null);
         if (!Roles.All.Contains(role))
-            return (false, "Role không hợp lệ");
+            return (false, "Role không hợp lệ", null);
         if (await _repo.GetByUsernameAsync(username.Trim()) is not null)
-            return (false, "Username đã tồn tại");
+            return (false, "Username đã tồn tại", null);
 
+        // Tài khoản tạo ra ở trạng thái chưa kích hoạt; người dùng phải xác thực email mới đăng nhập được.
+        var token = Guid.NewGuid().ToString("N");
         await _repo.CreateAsync(new User
         {
             Username = username.Trim(),
-            Email = email?.Trim() ?? string.Empty,
+            Email = email,
             FullName = fullName?.Trim() ?? string.Empty,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
-            Role = role
+            Role = role,
+            IsEmailVerified = false,
+            EmailVerificationToken = token
         });
+        return (true, null, token);
+    }
+
+    public async Task<(bool, string?)> VerifyEmailAsync(string token)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+            return (false, "Liên kết kích hoạt không hợp lệ.");
+        var user = await _repo.GetByVerificationTokenAsync(token.Trim());
+        if (user is null)
+            return (false, "Liên kết kích hoạt không hợp lệ hoặc đã được sử dụng.");
+        if (user.IsEmailVerified)
+            return (true, null);
+        user.IsEmailVerified = true;
+        user.EmailVerificationToken = null;
+        await _repo.UpdateAsync(user);
         return (true, null);
     }
 

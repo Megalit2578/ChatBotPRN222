@@ -32,6 +32,7 @@ public class AppDbContext : DbContext
             e.Property(u => u.Role).HasMaxLength(50).HasDefaultValue("Student");
             e.Property(u => u.AvatarPath).HasMaxLength(500);
             e.Property(u => u.AssignedSubjectId).HasMaxLength(36);
+            e.Property(u => u.EmailVerificationToken).HasMaxLength(64);
         });
 
         modelBuilder.Entity<Subject>(e =>

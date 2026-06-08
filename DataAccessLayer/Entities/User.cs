@@ -15,4 +15,9 @@ public class User
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public string? AvatarPath { get; set; }
     public string? Bio { get; set; }
+    // Tài khoản do Admin tạo phải xác thực email mới được kích hoạt & đăng nhập.
+    // Tài khoản seed mặc định coi như đã xác thực.
+    public bool IsEmailVerified { get; set; }
+    // Token một lần dùng để xác thực email (null sau khi đã xác thực).
+    public string? EmailVerificationToken { get; set; }
 }

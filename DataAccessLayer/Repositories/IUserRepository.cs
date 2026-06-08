@@ -6,6 +6,7 @@ public interface IUserRepository
 {
     Task<User?> GetByUsernameAsync(string username);
     Task<User?> GetByIdAsync(string id);
+    Task<User?> GetByVerificationTokenAsync(string token);
     Task<List<User>> GetAllAsync();
     Task CreateAsync(User user);
     Task UpdateAsync(User user);

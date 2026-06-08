@@ -6,7 +6,10 @@ public interface IUserService
 {
     Task<List<User>> GetAllAsync();
     Task<User?> GetByIdAsync(string id);
-    Task<(bool Success, string? Error)> CreateAsync(string username, string email, string fullName, string password, string role);
+    // Tạo tài khoản chưa kích hoạt; trả về token xác thực email để gửi link kích hoạt.
+    Task<(bool Success, string? Error, string? VerificationToken)> CreateAsync(string username, string email, string fullName, string password, string role);
+    // Kích hoạt tài khoản qua token xác thực email.
+    Task<(bool Success, string? Error)> VerifyEmailAsync(string token);
     Task<(bool Success, string? Error)> UpdateRoleAsync(string id, string newRole);
     Task<(bool Success, string? Error)> SetUploadPermissionAsync(string id, bool canUpload, string? subjectId);
     Task<(bool Success, string? Error)> ResetPasswordAsync(string id, string newPassword);

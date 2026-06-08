@@ -137,6 +137,12 @@ namespace ChatBotPRN222
                             ALTER TABLE Users ADD CanUploadDocuments bit NOT NULL DEFAULT 0;
                         IF COL_LENGTH('Users', 'AssignedSubjectId') IS NULL
                             ALTER TABLE Users ADD AssignedSubjectId nvarchar(36) NULL;
+                        -- Xác thực email khi Admin tạo tài khoản. Default 1 để các tài khoản cũ vẫn đăng nhập được;
+                        -- tài khoản mới do Admin tạo sẽ set 0 và phải xác thực qua email.
+                        IF COL_LENGTH('Users', 'IsEmailVerified') IS NULL
+                            ALTER TABLE Users ADD IsEmailVerified bit NOT NULL DEFAULT 1;
+                        IF COL_LENGTH('Users', 'EmailVerificationToken') IS NULL
+                            ALTER TABLE Users ADD EmailVerificationToken nvarchar(64) NULL;
 
                         -- Chapters (Subject → Chapter → Document). Index tạo cùng khối với bảng
                         -- (OBJECT_ID không nhận diện index nên không thể dùng để kiểm tra tồn tại).

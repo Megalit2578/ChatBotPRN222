@@ -28,6 +28,10 @@ public class AuthService : IAuthService
         if (!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
             return new LoginResult(false, "Sai mật khẩu", null, null, null, null, null);
 
+        // Tài khoản do Admin tạo phải xác thực email mới được đăng nhập.
+        if (!user.IsEmailVerified)
+            return new LoginResult(false, "Tài khoản chưa được kích hoạt. Vui lòng kiểm tra email và bấm link kích hoạt.", null, null, null, null, null);
+
         return new LoginResult(true, null, user.Id, user.Username, user.FullName, user.Role, user.AvatarPath, user.CanUploadDocuments, user.AssignedSubjectId);
     }
 
@@ -72,7 +76,8 @@ public class AuthService : IAuthService
                 Email = "admin@chatbot.local",
                 FullName = "Administrator",
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
-                Role = "Admin"
+                Role = "Admin",
+                IsEmailVerified = true
             });
         }
 
@@ -85,7 +90,8 @@ public class AuthService : IAuthService
                 Email = "lecturer@chatbot.local",
                 FullName = "Giảng viên Demo",
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword("lecturer123"),
-                Role = "Lecturer"
+                Role = "Lecturer",
+                IsEmailVerified = true
             });
         }
 
@@ -98,7 +104,8 @@ public class AuthService : IAuthService
                 Email = "student@chatbot.local",
                 FullName = "Sinh viên Demo",
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword("student123"),
-                Role = "Student"
+                Role = "Student",
+                IsEmailVerified = true
             });
         }
     }

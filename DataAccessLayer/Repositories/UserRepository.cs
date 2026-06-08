@@ -15,6 +15,9 @@ public class UserRepository : IUserRepository
     public Task<User?> GetByIdAsync(string id)
         => _context.Users.FirstOrDefaultAsync(u => u.Id == id);
 
+    public Task<User?> GetByVerificationTokenAsync(string token)
+        => _context.Users.FirstOrDefaultAsync(u => u.EmailVerificationToken == token);
+
     public Task<List<User>> GetAllAsync()
         => _context.Users.OrderByDescending(u => u.CreatedAt).ToListAsync();
 

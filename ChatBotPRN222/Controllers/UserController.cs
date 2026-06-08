@@ -10,10 +10,12 @@ public class UserController : Controller
 {
     private readonly IUserService _users;
     private readonly ISubjectService _subjects;
-    public UserController(IUserService users, ISubjectService subjects)
+    private readonly IEmailService _email;
+    public UserController(IUserService users, ISubjectService subjects, IEmailService email)
     {
         _users = users;
         _subjects = subjects;
+        _email = email;
     }
 
     public async Task<IActionResult> Index()
@@ -34,8 +36,25 @@ public class UserController : Controller
     [HttpPost]
     public async Task<IActionResult> Create(string username, string email, string fullName, string password, string role)
     {
-        var (ok, err) = await _users.CreateAsync(username, email, fullName, password, role);
-        TempData[ok ? "Success" : "Error"] = ok ? "Đã tạo người dùng mới." : err;
+        var (ok, err, token) = await _users.CreateAsync(username, email, fullName, password, role);
+        if (!ok)
+        {
+            TempData["Error"] = err;
+            return RedirectToAction(nameof(Index));
+        }
+
+        // Gửi thông tin đăng nhập + link kích hoạt tài khoản qua email.
+        var verifyUrl = Url.Action("VerifyEmail", "Auth", new { token }, Request.Scheme)!;
+        try
+        {
+            await _email.SendAccountCreatedAsync(email.Trim(), string.IsNullOrWhiteSpace(fullName) ? username : fullName, username.Trim(), password, verifyUrl);
+            TempData["Success"] = $"Đã tạo tài khoản và gửi thông tin đăng nhập + link kích hoạt tới {email.Trim()}.";
+        }
+        catch (Exception ex)
+        {
+            // Tài khoản đã được tạo nhưng email không gửi được — báo admin để xử lý.
+            TempData["Warning"] = $"Đã tạo tài khoản nhưng KHÔNG gửi được email kích hoạt: {ex.Message}. Người dùng chưa thể đăng nhập tới khi xác thực.";
+        }
         return RedirectToAction(nameof(Index));
     }
 
